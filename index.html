@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>GameHub</title>
+<title>ZiphyNet</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet"/>
 <style>
@@ -135,7 +135,7 @@ input,textarea,select{font-family:inherit;font-size:14px;color:var(--txt1)}
 
   /* NAV — compact */
   .nav{ padding:0 12px; gap:8px }
-  .nav-logo span,.nav-logo-text{ display:none } /* hide "GameHub" text, keep icon */
+  .nav-logo span,.nav-logo-text{ display:none } /* hide "ZiphyNet" text, keep icon */
   .nav-search{ max-width:none }
   .nav-search input{ padding:6px 10px 6px 30px; font-size:12px }
   /* Shrink nav icon buttons */
@@ -648,47 +648,15 @@ select.input{appearance:none;cursor:pointer}
 .game-card-title{font-weight:700;font-size:14px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .game-card-meta{font-size:11px;color:var(--txt3);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .game-tag{background:var(--glass);padding:2px 8px;border-radius:99px;font-size:10px;font-weight:600;color:var(--txt2)}
-.game-detail-cover{width:100%;max-height:320px;object-fit:cover;border-radius:var(--r-xl);margin-bottom:20px}
-.game-screenshot{width:100%;border-radius:var(--r-lg);cursor:zoom-in}
-.game-screenshots{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin:16px 0}
-.game-info-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px}
 .game-info-row:last-child{border-bottom:none}
-.game-info-label{color:var(--txt3)}
-.game-info-val{font-weight:600}
-.download-btn{width:100%;padding:14px;font-size:15px;display:flex;align-items:center;justify-content:center;gap:8px}
 
-/* GAME DETAIL — Play Store style */
-.gd-header{display:flex;gap:16px;padding:4px 0 16px}
-.gd-icon{width:88px;height:88px;border-radius:20px;background:var(--bg2);flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;border:1px solid var(--border)}
 .gd-icon img{width:100%;height:100%;object-fit:cover}
-.gd-icon-featured{position:absolute;top:-6px;right:-6px;background:var(--grad2);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:var(--shadow)}
-.gd-header-info{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:3px}
-.gd-title{font-family:var(--font-d);font-size:1.3rem;font-weight:700;line-height:1.25;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-.gd-dev{font-size:13px;color:var(--accent3);font-weight:500}
-.gd-stats-row{display:flex;align-items:center;gap:14px;margin-top:6px;flex-wrap:wrap}
 .gd-stats-row span{display:flex;align-items:center;gap:4px;font-size:12.5px;color:var(--txt3);font-weight:600}
 .gd-stats-row svg{color:var(--gold)}
 .gd-stats-row span:nth-child(2) svg{color:var(--txt3)}
-.gd-download-btn{width:100%;padding:13px;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:var(--r-lg)}
-.gd-quickgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:18px 0}
-.gd-quick{background:var(--bg1);border:1px solid var(--border);border-radius:var(--r-lg);padding:10px 8px;text-align:center}
-.gd-quick-lbl{font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
-.gd-quick-val{font-size:12.5px;font-weight:700;color:var(--txt1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.gd-screens{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px;scrollbar-width:thin}
-.gd-screen{flex-shrink:0;height:160px;width:auto;border-radius:var(--r-lg);cursor:zoom-in;border:1px solid var(--border);object-fit:cover}
-.gd-section-title{font-family:var(--font-d);font-size:1.05rem;font-weight:700;margin:24px 0 10px}
-.gd-about{font-size:13.5px;color:var(--txt2);line-height:1.75;white-space:pre-wrap}
-.gd-details{background:var(--bg1);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden}
-.gd-detail-row{display:flex;justify-content:space-between;padding:11px 16px;border-bottom:1px solid var(--border);font-size:13px}
 .gd-detail-row:last-child{border-bottom:none}
-.gd-detail-lbl{color:var(--txt3)}
-.gd-detail-val{font-weight:600;color:var(--txt1)}
 @media(max-width:600px){
-  .gd-icon{width:72px;height:72px;border-radius:16px}
-  .gd-title{font-size:1.1rem}
-  .gd-quickgrid{grid-template-columns:repeat(2,1fr)}
-  .gd-screen{height:130px}
-  .game-card-cover{height:auto;aspect-ratio:16/10;background:var(--bg3)}
+          .game-card-cover{height:auto;aspect-ratio:16/10;background:var(--bg3)}
   .game-card-cover img{object-fit:contain;background:var(--bg3)}
 }
 
@@ -707,14 +675,9 @@ select.input{appearance:none;cursor:pointer}
 .consent-links{display:flex;gap:16px;margin-bottom:20px}
 .consent-links a{font-size:12px;color:var(--accent3);text-decoration:underline;cursor:pointer}
 
-/* GAME PROMO CARD IN FEED — visually distinct from community posts */
-.game-promo-row{border:1.5px solid rgba(168,85,247,.35);background:linear-gradient(135deg,rgba(168,85,247,.06),rgba(236,72,153,.04));position:relative}
 .game-promo-row::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--grad2);border-radius:var(--r-xl) 0 0 var(--r-xl)}
-.game-promo-badge{color:#fff !important;background:var(--grad2) !important;border:none !important;font-weight:700}
-.game-promo-card{border-color:rgba(168,85,247,.3) !important}
 .game-promo-card .lp-img{max-height:none;background:var(--bg3)}
 .game-promo-card .lp-img img{height:auto;max-height:420px;object-fit:contain;background:var(--bg3)}
-.game-promo-dl-btn{flex-shrink:0;display:flex;align-items:center;gap:6px}
 
 /* RICH TEXT EDITOR */
 .blog-post-content{color:var(--txt2);font-size:14.5px;line-height:1.8}
@@ -812,7 +775,6 @@ function restoreFromUrl(){
     if(page==='thread'&&param) S.params={id:param}
     else if(page==='profile'&&param) S.params={username:param}
     else if(page==='forum'&&param) S.params={category:param}
-    else if(page==='game-detail'&&param) S.params={slug:param}
     else if(page==='manage-community'&&param) S.params={slug:param}
     else S.params={}
   }catch(e){}
@@ -1002,9 +964,9 @@ function navHtml(){
   return '<nav class="nav">'
     +'<div class="nav-logo" onclick="go(\'home\')">'
     +'<svg viewBox="0 0 24 24" fill="none" stroke="url(#ng)" stroke-width="2.2"><defs><linearGradient id="ng" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#a855f7"/><stop offset="100%" stop-color="#ec4899"/></linearGradient></defs>'
-    +'<path d="M21 6H3a2 2 0 00-2 2v8a2 2 0 002 2h18a2 2 0 002-2V8a2 2 0 00-2-2z"/><path d="M9 10v4M7 12h4M17 10v.01M15 12v.01"/></svg><span class="nav-logo-text">GameHub</span></div>'
+    +'<path d="M21 6H3a2 2 0 00-2 2v8a2 2 0 002 2h18a2 2 0 002-2V8a2 2 0 00-2-2z"/><path d="M9 10v4M7 12h4M17 10v.01M15 12v.01"/></svg><span class="nav-logo-text">ZiphyNet</span></div>'
     +'<div class="nav-blog-link" onclick="go(\'blog\')">📰 Blog</div>'
-    +'<div class="nav-blog-link" onclick="go(\'games\')">🎮 Games</div>'
+    
     +'<div class="nav-search">'
     +'<span class="search-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></span>'
     +'<input id="srch" placeholder="Search games, posts, users…" autocomplete="off"/>'
@@ -1017,12 +979,12 @@ function sidebarHtml(cats){
   cats=cats||[]
   var total=cats.reduce(function(a,c){return a+(c.thread_count||0)},0)
   return '<div class="sidebar">'
-    +'<div class="scard"><div class="scard-hd"><span style="background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">🎮 GameHub</span></div>'
+    +'<div class="scard"><div class="scard-hd"><span style="background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">🎮 ZiphyNet</span></div>'
     +'<div class="scard-body"><p style="font-size:13px;color:var(--txt2);margin-bottom:14px;line-height:1.6">The gaming community for everyone.</p>'
     +'<div class="row" style="gap:10px;margin-bottom:16px">'
     +'<div class="stat-pill flex1"><div class="stat-num">'+total+'</div><div class="stat-lbl">Posts</div></div>'
     +'<div class="stat-pill flex1"><div class="stat-num">'+cats.length+'</div><div class="stat-lbl">Categories</div></div></div>'
-    +(S.user?'<button class="btn btn-grad w-full" onclick="go(\'new-thread\')" style="justify-content:center">✦ Create Post</button>'      +'<button class="btn btn-outline w-full" onclick="goCreateCommunity()" style="justify-content:center;margin-top:8px">🏠 Create Community</button>'      :'<button class="btn btn-grad w-full" onclick="go(\'register\')" style="justify-content:center">Join GameHub</button>')
+    +(S.user?'<button class="btn btn-grad w-full" onclick="go(\'new-thread\')" style="justify-content:center">✦ Create Post</button>'      +'<button class="btn btn-outline w-full" onclick="goCreateCommunity()" style="justify-content:center;margin-top:8px">🏠 Create Community</button>'      :'<button class="btn btn-grad w-full" onclick="go(\'register\')" style="justify-content:center">Join ZiphyNet</button>')
     +'</div></div>'
     +'<div class="scard"><div class="scard-hd" style="display:flex;align-items:center;justify-content:space-between;color:var(--txt2)"><span>🕹 Communities</span><span onclick="go(\'categories\')" style="font-size:11px;color:var(--accent);cursor:pointer;font-weight:600;-webkit-text-fill-color:var(--accent)">View all →</span></div>'
     +'<div class="scard-body" style="padding:8px 10px">'
@@ -1036,7 +998,7 @@ function sidebarHtml(cats){
     +'<div class="scard-rule"><span class="scard-rule-n">4</span><span>No hate speech or harassment</span></div>'
     +'<div class="scard-rule"><span class="scard-rule-n">5</span><span>Have fun and game on 🎮</span></div>'
     +'</div></div>'
-    +'<div style="font-size:11px;color:var(--txt3);padding:0 4px;line-height:2">GameHub © '+new Date().getFullYear()+' · Help · About · Privacy</div>'
+    +'<div style="font-size:11px;color:var(--txt3);padding:0 4px;line-height:2">ZiphyNet © '+new Date().getFullYear()+' · Help · About · Privacy</div>'
     +'</div>'
 }
 
@@ -1056,26 +1018,6 @@ function catPostClick(el){go('new-thread',{category:el.dataset.slug})}
 function goAdminCats(){adminTab='categories';go('admin')}
 
 // POST ROW
-function gamePromoCardHtml(g){
-  var ratingTxt = (g.rating != null && g.rating !== '') ? Number(g.rating).toFixed(1) : null
-  return '<div class="post-row game-promo-row" data-slug="'+esc(g.slug)+'" onclick="goGameDetail(this)">'
-    +'<div class="post-body">'
-    +'<div class="post-meta">'
-    +'<span class="post-cat game-promo-badge">⬇ Free Download</span>'
-    +'<span class="txt-dim">·</span><span>'+esc(g.platform||'Android')+'</span>'
-    +(ratingTxt?'<span class="txt-dim">· ⭐ '+ratingTxt+'</span>':'')
-    +'</div>'
-    +'<div class="post-title">'+esc(g.title)+'</div>'
-    +'<div class="lp-card game-promo-card" style="margin-top:8px;cursor:pointer">'
-    +(g.cover_url?'<div class="lp-img"><img src="'+esc(g.cover_url)+'" alt="" loading="lazy"/></div>':'<div class="lp-img empty"></div>')
-    +'<div class="lp-body"><div class="lp-host">🎮 GameHub Games</div>'
-    +'<div class="lp-title">'+esc(g.title)+'</div>'
-    +'<div class="lp-desc">'+esc((g.description||'').slice(0,90))+'</div></div></div>'
-    +'<div class="post-actions">'
-    +'<span class="post-btn" style="pointer-events:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>'+(g.downloads||0)+' Downloads</span>'
-    +'<button class="btn btn-grad btn-sm game-promo-dl-btn" data-slug="'+esc(g.slug)+'" onclick="event.stopPropagation();goGameDetail(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download</button>'
-    +'</div></div></div>'
-}
 
 function postRowHtml(t){
   var score=parseInt(t.vote_score)||0, isSaved=S.saves[t.id], catCol=cc(t.category_slug)
@@ -1186,15 +1128,15 @@ function checkConsent(){
   div.id = 'consent-overlay'
   div.className = 'consent-overlay'
   div.innerHTML = '<div class="consent-box">'
-    +'<h2>Welcome to GameHub</h2>'
-    +'<p>Before you continue, please read and agree to our Community Guidelines. GameHub is a gaming community — we want it to stay safe and fun for everyone.</p>'
-    +'<p><strong>By using GameHub you agree to:</strong> Not post illegal, hateful, sexual, or abusive content. Treat other members with respect. Not harass, threaten, or impersonate others. Not post content that endangers minors. Report content that violates these rules.</p>'
+    +'<h2>Welcome to ZiphyNet</h2>'
+    +'<p>Before you continue, please read and agree to our Community Guidelines. ZiphyNet is a gaming community — we want it to stay safe and fun for everyone.</p>'
+    +'<p><strong>By using ZiphyNet you agree to:</strong> Not post illegal, hateful, sexual, or abusive content. Treat other members with respect. Not harass, threaten, or impersonate others. Not post content that endangers minors. Report content that violates these rules.</p>'
     +'<div class="consent-links">'
     +'<a onclick="go(\'terms\')">Terms & Conditions</a>'
     +'<a onclick="go(\'privacy\')">Privacy Policy</a>'
     +'<a onclick="go(\'guidelines\')">Community Guidelines</a>'
     +'</div>'
-    +'<button class="btn btn-grad w-full" style="justify-content:center" onclick="acceptConsent()">I Agree — Continue to GameHub</button>'
+    +'<button class="btn btn-grad w-full" style="justify-content:center" onclick="acceptConsent()">I Agree — Continue to ZiphyNet</button>'
     +'</div>'
   document.body.appendChild(div)
 }
@@ -1218,7 +1160,7 @@ async function renderSettings(){
 
     +'<div class="card" style="padding:20px;margin-bottom:16px">'
     +'<div style="font-weight:700;margin-bottom:4px">🏠 Home Feed</div>'
-    +'<div style="font-size:13px;color:var(--txt3);margin-bottom:14px">Choose how posts are ordered when you open GameHub</div>'
+    +'<div style="font-size:13px;color:var(--txt3);margin-bottom:14px">Choose how posts are ordered when you open ZiphyNet</div>'
     +'<label style="display:flex;align-items:flex-start;gap:10px;padding:12px;border:1px solid '+(pref==='random'?'var(--accent)':'var(--border2)')+';border-radius:var(--r-lg);cursor:pointer;margin-bottom:10px;background:'+(pref==='random'?'rgba(168,85,247,.08)':'transparent')+'">'
     +'<input type="radio" name="feedpref" value="random" '+(pref==='random'?'checked':'')+' onchange="setFeedPreference(this.value)" style="margin-top:3px"/>'
     +'<div><div style="font-weight:600;font-size:13px">🔀 Randomized (default)</div><div style="font-size:12px;color:var(--txt3);margin-top:2px">Show a fresh mix of posts each time you visit</div></div>'
@@ -1242,7 +1184,7 @@ async function renderSettings(){
     +'</div>'
 
     +'<div class="card" style="padding:16px;margin-bottom:16px;font-size:12px;color:var(--txt3);line-height:1.6">'
-    +'GameHub is committed to keeping this community safe. If you see harmful or inappropriate content, use the Report button on any post, comment, or profile. We review all reports and act within 24 hours. For child safety concerns contact us immediately at <span style="color:var(--accent3)">safety@ziphynet.com</span>'
+    +'ZiphyNet is committed to keeping this community safe. If you see harmful or inappropriate content, use the Report button on any post, comment, or profile. We review all reports and act within 24 hours. For child safety concerns contact us immediately at <span style="color:var(--accent3)">safety@ziphynet.com</span>'
     +'</div>'
 
     +'<button class="btn btn-outline w-full" style="justify-content:center" onclick="logout()">Sign out</button>'
@@ -1262,21 +1204,21 @@ async function renderPrivacyPolicy(){
     +'<div style="font-size:12px;color:var(--txt3);margin-bottom:20px">Last updated: '+new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})+'</div>'
     +'<div class="legal-text">'
     +'<h3>1. Information We Collect</h3>'
-    +'<p>When you create a GameHub account, we collect your username, email address, and password (securely hashed). If you sign in with Google, we receive your name, email, and profile picture from your Google account. We also store any content you create, such as posts, comments, messages, and profile information you choose to add.</p>'
+    +'<p>When you create a ZiphyNet account, we collect your username, email address, and password (securely hashed). If you sign in with Google, we receive your name, email, and profile picture from your Google account. We also store any content you create, such as posts, comments, messages, and profile information you choose to add.</p>'
     +'<h3>2. How We Use Your Information</h3>'
-    +'<p>We use your information to operate your account, display your posts and profile to other users, send you notifications about activity relevant to you, and improve the GameHub experience. We do not sell your personal information to third parties.</p>'
+    +'<p>We use your information to operate your account, display your posts and profile to other users, send you notifications about activity relevant to you, and improve the ZiphyNet experience. We do not sell your personal information to third parties.</p>'
     +'<h3>3. Cookies & Local Storage</h3>'
-    +'<p>GameHub uses browser local storage to keep you signed in and remember your preferences, such as your feed display setting. We do not use third-party advertising cookies.</p>'
+    +'<p>ZiphyNet uses browser local storage to keep you signed in and remember your preferences, such as your feed display setting. We do not use third-party advertising cookies.</p>'
     +'<h3>4. Data Sharing</h3>'
-    +'<p>Your public posts, comments, and profile information are visible to other GameHub users by design. Private messages are only visible to the sender and recipient. We may share information if required by law.</p>'
+    +'<p>Your public posts, comments, and profile information are visible to other ZiphyNet users by design. Private messages are only visible to the sender and recipient. We may share information if required by law.</p>'
     +'<h3>5. Data Security</h3>'
     +'<p>We take reasonable measures to protect your data, including password hashing and secure authentication tokens. However, no online service can guarantee absolute security.</p>'
     +'<h3>6. Your Choices</h3>'
     +'<p>You can edit or delete your posts and profile information at any time. You can contact us to request account deletion.</p>'
     +'<h3>7. Children\'s Privacy</h3>'
-    +'<p>GameHub is not directed at children under 13, and we do not knowingly collect personal information from children under 13.</p>'
+    +'<p>ZiphyNet is not directed at children under 13, and we do not knowingly collect personal information from children under 13.</p>'
     +'<h3>8. Changes to This Policy</h3>'
-    +'<p>We may update this Privacy Policy from time to time. Continued use of GameHub after changes means you accept the updated policy.</p>'
+    +'<p>We may update this Privacy Policy from time to time. Continued use of ZiphyNet after changes means you accept the updated policy.</p>'
     +'</div></div></div>')
 }
 
@@ -1288,23 +1230,23 @@ async function renderTerms(){
     +'<div style="font-size:12px;color:var(--txt3);margin-bottom:20px">Last updated: '+new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})+'</div>'
     +'<div class="legal-text">'
     +'<h3>1. Acceptance of Terms</h3>'
-    +'<p>By creating an account or using GameHub, you agree to these Terms & Conditions. If you do not agree, please do not use the platform.</p>'
+    +'<p>By creating an account or using ZiphyNet, you agree to these Terms & Conditions. If you do not agree, please do not use the platform.</p>'
     +'<h3>2. Account Responsibilities</h3>'
     +'<p>You are responsible for maintaining the confidentiality of your account credentials and for all activity that occurs under your account. You must provide accurate information when registering.</p>'
     +'<h3>3. Acceptable Use</h3>'
-    +'<p>You agree not to post illegal, harassing, hateful, or sexually explicit content, impersonate others, spam the platform, or attempt to disrupt or hack GameHub. Communities and posts you create must follow these same rules.</p>'
+    +'<p>You agree not to post illegal, harassing, hateful, or sexually explicit content, impersonate others, spam the platform, or attempt to disrupt or hack ZiphyNet. Communities and posts you create must follow these same rules.</p>'
     +'<h3>4. User-Generated Content</h3>'
-    +'<p>You retain ownership of content you post, but grant GameHub a license to display and distribute it within the platform. You are solely responsible for the content you share.</p>'
+    +'<p>You retain ownership of content you post, but grant ZiphyNet a license to display and distribute it within the platform. You are solely responsible for the content you share.</p>'
     +'<h3>5. Downloads</h3>'
-    +'<p>Games and files listed in the Games section are provided as-is. GameHub does not host or control external download links and is not responsible for the content, safety, or availability of third-party download sources. Download and use at your own risk.</p>'
+    +'<p>Games and files listed in the Games section are provided as-is. ZiphyNet does not host or control external download links and is not responsible for the content, safety, or availability of third-party download sources. Download and use at your own risk.</p>'
     +'<h3>6. Communities</h3>'
     +'<p>Users may create up to a limited number of their own communities and are responsible for moderating content within them, in line with these Terms.</p>'
     +'<h3>7. Termination</h3>'
     +'<p>We reserve the right to suspend or terminate accounts that violate these Terms, including but not limited to spam, abuse, or illegal activity.</p>'
     +'<h3>8. Disclaimer</h3>'
-    +'<p>GameHub is provided "as is" without warranties of any kind. We are not liable for any damages arising from your use of the platform.</p>'
+    +'<p>ZiphyNet is provided "as is" without warranties of any kind. We are not liable for any damages arising from your use of the platform.</p>'
     +'<h3>9. Changes to These Terms</h3>'
-    +'<p>We may revise these Terms from time to time. Continued use of GameHub after changes means you accept the updated Terms.</p>'
+    +'<p>We may revise these Terms from time to time. Continued use of ZiphyNet after changes means you accept the updated Terms.</p>'
     +'</div></div></div>')
 }
 
@@ -1321,7 +1263,7 @@ async function renderGuidelines(){
     +'<div style="font-size:12px;color:var(--txt3);margin-bottom:20px">Effective April 15, 2026</div>'
     +'<div class="legal-text">'
     +'<h3>Our Mission</h3>'
-    +'<p>GameHub is a gaming community for sharing, discovering, and downloading games. We want it to be a safe, inclusive, and fun space for everyone. These guidelines apply to all posts, comments, communities, messages, and profiles.</p>'
+    +'<p>ZiphyNet is a gaming community for sharing, discovering, and downloading games. We want it to be a safe, inclusive, and fun space for everyone. These guidelines apply to all posts, comments, communities, messages, and profiles.</p>'
     +'<h3>1. Prohibited Content</h3>'
     +'<p>The following content is strictly prohibited and will result in immediate removal and account suspension:</p>'
     +'<p><strong>Hate Speech & Discrimination</strong> — Content that attacks or demeans individuals or groups based on race, ethnicity, religion, gender, sexual orientation, disability, or nationality.</p>'
@@ -1331,7 +1273,7 @@ async function renderGuidelines(){
     +'<p><strong>Spam & Misinformation</strong> — Repetitive spam, scam links, impersonation, or deliberately false information intended to deceive.</p>'
     +'<p><strong>Illegal Content</strong> — Links to or promotion of illegal downloads, piracy, malware, drugs, or any other illegal activity.</p>'
     +'<h3>2. Child Safety</h3>'
-    +'<p>GameHub has zero tolerance for any content that exploits, endangers, or sexualizes minors (anyone under 18). This includes images, text, links, or any other form of content. We comply with all applicable child safety laws and will report violations to the National Center for Missing & Exploited Children (NCMEC) and relevant law enforcement. If you encounter such content, report it immediately using the in-app report button or email safety@ziphynet.com.</p>'
+    +'<p>ZiphyNet has zero tolerance for any content that exploits, endangers, or sexualizes minors (anyone under 18). This includes images, text, links, or any other form of content. We comply with all applicable child safety laws and will report violations to the National Center for Missing & Exploited Children (NCMEC) and relevant law enforcement. If you encounter such content, report it immediately using the in-app report button or email safety@ziphynet.com.</p>'
     +'<h3>3. Reporting Content</h3>'
     +'<p>Every post, comment, and user profile has a Report button. Use it whenever you see content that violates these guidelines. Our moderation team reviews all reports and acts within 24 hours. Reports are confidential.</p>'
     +'<h3>4. Blocking Users</h3>'
@@ -1391,16 +1333,12 @@ function getFeedPreference(){
 
 async function renderHome(){
   setContent('<div class="page"><div class="loading">Loading feed</div></div>')
-  var sort=S.params.sort||'hot',cats=[],threads=[],games=[]
+  var sort=S.params.sort||'hot',cats=[],threads=[]
   try{
     var r1=await GET('/forum/categories');cats=r1.categories||[]
     var r2=await GET('/forum/threads?sort='+(sort==='hot'?'popular':'latest'));threads=r2.threads||[]
-    try{ var r3=await GET('/games'); games=r3.games||[] }catch(e){}
   }catch(e){toast(e.message,'er')}
 
-  // Feed ordering: only randomize on the default 'hot' entry view, and only if
-  // the user hasn't explicitly chosen 'top' as their default in Settings.
-  // Explicitly picking a sort tab (hot/new/top) always respects that exact choice.
   var noExplicitSortChosen = !S.params.sort
   if(noExplicitSortChosen && getFeedPreference() === 'random'){
     threads = shuffleArray(threads)
@@ -1411,44 +1349,16 @@ async function renderHome(){
     +'<div style="flex:1;background:var(--bg2);border:1px solid var(--border2);border-radius:99px;padding:9px 16px;color:var(--txt3);font-size:13px">What\'s happening in gaming?</div>'
     +'<button class="btn btn-grad btn-sm" style="flex-shrink:0">Post</button></div>':''
 
-  // Build feed items, injecting a random game promo card every ~5 posts
-  var feedItems = threads.map(function(t){ return {type:'thread', html: postRowHtml(t)} })
-  var shuffledGames = games.length ? shuffleArray(games) : []
-  var gi = 0
-  if(shuffledGames.length){
-    var withPromos = []
-    feedItems.forEach(function(item, idx){
-      withPromos.push(item)
-      if((idx+1) % 5 === 0 && gi < shuffledGames.length){
-        withPromos.push({type:'game', html: gamePromoCardHtml(shuffledGames[gi])})
-        gi++
-      }
-    })
-    feedItems = withPromos
-  }
-
-  var feed = feedItems.length===0
+  var feed = threads.length===0
     ? '<div class="empty"><div class="empty-icon">🎮</div><p style="font-size:15px;font-weight:600;margin-bottom:6px">No posts yet</p>'+(S.user?'<button class="btn btn-grad mt2" onclick="go(\'new-thread\')" style="margin-top:16px">Create First Post</button>':'')+'</div>'
-    : feedItems.map(function(i){return i.html}).join('')
-
-  // Out of community posts to show — keep the scroll going with remaining games
-  var remainingGames = shuffledGames.slice(gi)
-  var moreGamesHtml = ''
-  if(remainingGames.length){
-    moreGamesHtml = '<div style="display:flex;align-items:center;gap:10px;margin:20px 0 12px">'
-      + '<div style="height:1px;flex:1;background:var(--border)"></div>'
-      + '<div style="font-size:12px;font-weight:700;color:var(--txt3);white-space:nowrap">🎮 You\'re all caught up — more games to explore</div>'
-      + '<div style="height:1px;flex:1;background:var(--border)"></div>'
-      + '</div>'
-      + remainingGames.map(gamePromoCardHtml).join('')
-  }
+    : threads.map(postRowHtml).join('')
 
   setContent('<div class="page"><div>'+createBox
     +'<div class="card" style="margin-bottom:12px;overflow:hidden"><div class="sort-bar">'
     +'<button class="sort-btn'+(sort==='hot'?' active':'')+'" onclick="go(\'home\',{sort:\'hot\'})">🔥 Hot</button>'
     +'<button class="sort-btn'+(sort==='new'?' active':'')+'" onclick="go(\'home\',{sort:\'new\'})">✨ New</button>'
     +'<button class="sort-btn'+(sort==='top'?' active':'')+'" onclick="go(\'home\',{sort:\'top\'})">📈 Top</button>'
-    +'</div></div>'+feed+moreGamesHtml+'</div>'+sidebarHtml(cats)+'</div>')
+    +'</div></div>'+feed+'</div>'+sidebarHtml(cats)+'</div>')
   initSearch();fetchLinkPreviews()
 }
 
@@ -1720,7 +1630,7 @@ async function renderCategories(){
       +(c.image_url?'<div class="cat-card-icon" style="background:var(--bg1);border:2px solid rgba(255,255,255,.2)"><img src="'+esc(c.image_url)+'" style="width:100%;height:100%;object-fit:cover" loading="lazy"/></div>':(c.cover_url?'':'<div class="cat-card-icon">'+esc(c.icon||'\xf0\x9f\x8e\xae')+'</div>'))+'</div>'
       +'</div>'
       +'<div class="cat-card-body"><div class="cat-card-name" style="color:'+col+'">'+esc(c.name)+'</div>'
-      +'<div class="cat-card-desc">'+esc(c.description||'A GameHub community')+'</div>'
+      +'<div class="cat-card-desc">'+esc(c.description||'A ZiphyNet community')+'</div>'
       +'<div class="cat-card-footer"><div style="display:flex;align-items:center;gap:4px"><span>📝</span><strong style="color:var(--txt1)">'+(c.thread_count||0)+'</strong> posts</div>'+postBtn+'</div></div></div>'
   }).join('')
   var adminHint=S.user&&S.user.role==='admin'?'<div class="card" style="padding:16px;margin-top:20px;display:flex;align-items:center;gap:12px"><span style="font-size:20px">⚙</span><div class="flex1"><div style="font-weight:600;font-size:13px">Manage Categories</div><div style="font-size:12px;color:var(--txt3)">Create, edit, reorder and delete categories from the admin panel</div></div><button class="btn btn-grad btn-sm" onclick="goAdminCats()">Open Admin</button></div>':''
@@ -1732,7 +1642,7 @@ async function renderCategories(){
       + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:6px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Create Community</button>'
       + '</div>'
     : '<div style="margin-bottom:16px"><div style="font-family:var(--font-d);font-size:1.6rem;font-weight:700">🕹 Communities</div>'
-      + '<div style="color:var(--txt3);font-size:13px;margin-top:2px">Browse all gaming communities on GameHub</div></div>'
+      + '<div style="color:var(--txt3);font-size:13px;margin-top:2px">Browse all gaming communities on ZiphyNet</div></div>'
   var createCard = S.user
     ? '<div class="cat-card" onclick="goCreateCommunity()" style="border:2px dashed var(--border2);background:transparent;min-height:160px;display:flex;align-items:center;justify-content:center">'
       + '<div style="text-align:center;padding:16px">'
@@ -2233,9 +2143,9 @@ function startNotifPolling(){
 function logoSvgHtml(){return '<svg width="36" height="36" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="alg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#a855f7"/><stop offset="100%" stop-color="#ec4899"/></linearGradient></defs><path d="M21 6H3a2 2 0 00-2 2v8a2 2 0 002 2h18a2 2 0 002-2V8a2 2 0 00-2-2z" stroke="url(#alg)" stroke-width="2.2"/><path d="M9 10v4M7 12h4M17 10v.01M15 12v.01" stroke="url(#alg)" stroke-width="2.2" stroke-linecap="round"/></svg>'}
 function renderLogin(){
   document.getElementById('app').innerHTML='<div class="auth-wrap"><div class="auth-box">'
-    +'<div class="auth-logo">'+logoSvgHtml()+' GameHub</div>'
+    +'<div class="auth-logo">'+logoSvgHtml()+' ZiphyNet</div>'
     +'<div class="auth-card"><div style="font-family:var(--font-d);font-size:1.2rem;font-weight:700;margin-bottom:4px">Welcome back</div>'
-    +'<div style="font-size:13px;color:var(--txt3);margin-bottom:24px">Sign in to your GameHub account</div>'
+    +'<div style="font-size:13px;color:var(--txt3);margin-bottom:24px">Sign in to your ZiphyNet account</div>'
     +'<div class="fstack"><div class="field"><label>Email</label><input class="input" id="le" type="email" placeholder="you@example.com"/></div>'
     +'<div class="field"><label>Password</label><div class="pw-wrap"><input class="input" id="lp" type="password" placeholder="••••••••" onkeydown="fpEmailKey(event)"/><button class="pw-eye" type="button" data-pwid="lp" onclick="togglePwBtn(this)" tabindex="-1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>'
     +'<div id="lerr" class="ferr" style="display:none"></div>'
@@ -2244,7 +2154,7 @@ function renderLogin(){
     +'<div id="google-btn-login"></div>'
     +'</div></div>'
     +'<div class="auth-foot" style="margin-top:6px"><a onclick="renderForgotPassword()" style="color:var(--txt3);font-size:12px">Forgot your password?</a></div>'
-    +'<div class="auth-foot">New to GameHub? <a onclick="go(\'register\')">Create a free account</a></div>'
+    +'<div class="auth-foot">New to ZiphyNet? <a onclick="go(\'register\')">Create a free account</a></div>'
     +'</div></div>'
   initGoogleSignIn('google-btn-login')
 }
@@ -2260,8 +2170,8 @@ async function doLogin(){
 }
 function renderRegister(){
   document.getElementById('app').innerHTML='<div class="auth-wrap"><div class="auth-box">'
-    +'<div class="auth-logo">'+logoSvgHtml()+' GameHub</div>'
-    +'<div class="auth-card"><div style="font-family:var(--font-d);font-size:1.2rem;font-weight:700;margin-bottom:4px">Join GameHub</div>'
+    +'<div class="auth-logo">'+logoSvgHtml()+' ZiphyNet</div>'
+    +'<div class="auth-card"><div style="font-family:var(--font-d);font-size:1.2rem;font-weight:700;margin-bottom:4px">Join ZiphyNet</div>'
     +'<div style="font-size:13px;color:var(--txt3);margin-bottom:24px">The front page of gaming. Free forever.</div>'
     +'<div class="fstack"><div class="field"><label>Username</label><input class="input" id="ru" placeholder="CoolGamer42" maxlength="20"/></div>'
     +'<div class="field"><label>Email</label><input class="input" id="re" type="email" placeholder="you@example.com"/></div>'
@@ -2281,7 +2191,7 @@ async function doRegister(){
   errEl.style.display='none'
   if(!username||!email||!password){errEl.textContent='Fill in all fields';errEl.style.display='block';return}
   btn.disabled=true;btn.textContent='Creating account…'
-  try{var r=await POST('/auth/register',{username:username,email:email,password:password});setAuth(r.token,r.user);toast('Welcome to GameHub, '+r.user.username+'! 🎮');go('home')}
+  try{var r=await POST('/auth/register',{username:username,email:email,password:password});setAuth(r.token,r.user);toast('Welcome to ZiphyNet, '+r.user.username+'! 🎮');go('home')}
   catch(e){errEl.textContent=e.message;errEl.style.display='block';btn.disabled=false;btn.textContent='Create Account'}
 }
 function logout(){clearAuth();toast('See you next time!');go('home')}
@@ -2294,7 +2204,7 @@ function showFPStep(){
     +'<div class="step-dot '+(fpStep===1?'active':fpStep>1?'done':'')+'"></div>'
     +'<div class="step-dot '+(fpStep===2?'active':fpStep>2?'done':'')+'"></div>'
     +'<div class="step-dot '+(fpStep===3?'active':'')+'"></div></div>'
-  var logo='<div class="auth-logo">'+logoSvgHtml()+' GameHub</div>'
+  var logo='<div class="auth-logo">'+logoSvgHtml()+' ZiphyNet</div>'
   if(fpStep===1){
     document.getElementById('app').innerHTML='<div class="auth-wrap"><div class="auth-box">'+logo
       +'<div class="auth-card">'+dots
@@ -2414,7 +2324,7 @@ async function renderAdmin(){
   var bodyHtml='<div class="loading">Loading</div>'
   try{if(adminTab==='dashboard')bodyHtml=await buildAdminDashboard();if(adminTab==='users')bodyHtml=await buildAdminUsers();if(adminTab==='posts')bodyHtml=await buildAdminPosts();if(adminTab==='categories')bodyHtml=await buildAdminCategories();if(adminTab==='reports')bodyHtml=await buildAdminReports()}
   catch(e){bodyHtml='<div class="card"><div class="empty">Failed to load: '+esc(e.message)+'</div></div>'}
-  setContent('<div class="admin-wrap"><div style="margin-bottom:20px"><div style="font-family:var(--font-d);font-size:1.6rem;font-weight:700">⚙ Admin Panel</div><div style="color:var(--txt3);font-size:13px;margin-top:4px">GameHub management console</div></div>'+tabHtml+bodyHtml+'</div>')
+  setContent('<div class="admin-wrap"><div style="margin-bottom:20px"><div style="font-family:var(--font-d);font-size:1.6rem;font-weight:700">⚙ Admin Panel</div><div style="color:var(--txt3);font-size:13px;margin-top:4px">ZiphyNet management console</div></div>'+tabHtml+bodyHtml+'</div>')
 }
 function switchAdminTab(tab){adminTab=tab;renderAdmin()}
 
@@ -2548,7 +2458,7 @@ async function adminDeleteCat(id,name){
 // RENDER
 function setContent(html){
   document.getElementById('app').innerHTML=navHtml()+html
-    +'<footer style="text-align:center;color:var(--txt3);font-size:11px;padding:32px 24px;margin-top:32px;border-top:1px solid var(--border)">GameHub © '+new Date().getFullYear()+' · Help · About · Privacy</footer>'
+    +'<footer style="text-align:center;color:var(--txt3);font-size:11px;padding:32px 24px;margin-top:32px;border-top:1px solid var(--border)">ZiphyNet © '+new Date().getFullYear()+' · Help · About · Privacy</footer>'
   setTimeout(fetchLinkPreviews,150)
   updateBadge()
   updateMbn()
@@ -2568,10 +2478,6 @@ async function render(){
   else if(S.page==='manage-community') await renderManageCommunity()
   else if(S.page==='blog') await renderBlog()
   else if(S.page==='blog-post') await renderBlogPost()
-  else if(S.page==='games') await renderGames()
-  else if(S.page==='game-detail') await renderGameDetail()
-  else if(S.page==='add-game') await renderAddGame()
-  else if(S.page==='edit-game') await renderEditGame()
   else if(S.page==='settings') await renderSettings()
   else if(S.page==='privacy') await renderPrivacyPolicy()
   else if(S.page==='terms') await renderTerms()
@@ -3260,8 +3166,9 @@ async function renderBlog(){
 
   var tabs = [
     {id:'', label:'All Posts'},
-    {id:'apk', label:'📱 APK Games'},
-    {id:'psp', label:'🎮 PPSSPP Games'}
+    {id:'news', label:'📰 News'},
+    {id:'apk', label:'📱 APK'},
+    {id:'psp', label:'🎮 PPSSPP'}
   ]
   var tabsHtml = tabs.map(function(t){
     return '<div class="blog-tab'+(cat===t.id?' active':'')+'" data-cat="'+t.id+'" onclick="blogTabClick(this)">'+t.label+'</div>'
@@ -3272,7 +3179,7 @@ async function renderBlog(){
     : '<div class="blog-grid">'+posts.map(blogCardHtml).join('')+'</div>'
 
   setContent('<div style="max-width:1100px;margin:0 auto;padding:20px">'
-    + '<div class="blog-hero"><h1>📰 GameHub Blog</h1><p>Game downloads, mods, and guides — APK & PPSSPP titles for Android</p>'
+    + '<div class="blog-hero"><h1>📰 ZiphyNet Blog</h1><p>News, updates, guides and community posts from the ZiphyNet team</p>'
     + (S.user && S.user.role==='admin' ? '<button class="btn btn-grad btn-sm" style="margin-top:12px" onclick="goAddBlogPost()">+ New Post</button>' : '')
     + '</div>'
     + '<div class="blog-search-bar"><input id="blog-search" placeholder="Search games…" value="'+esc(q)+'" onkeydown="if(event.key===\'Enter\')blogSearch()"/><button class="btn btn-grad btn-sm" onclick="blogSearch()">Search</button></div>'
@@ -3286,7 +3193,7 @@ function blogCardHtml(p){
   return '<div class="blog-card" data-slug="'+esc(p.slug)+'" onclick="goBlogPost(this)">'
     + '<img class="blog-card-img" src="'+esc(p.image_url)+'" loading="lazy" alt="'+esc(p.title)+'"/>'
     + '<div class="blog-card-body">'
-    + '<div class="blog-card-cat">'+(p.category==='psp'?'PPSSPP':'APK')+' GAME</div>'
+    + '<div class="blog-card-cat">'+(p.category==='psp'?'PPSSPP':p.category==='news'?'NEWS':p.category==='apk'?'APK':'POST')+'</div>'
     + '<div class="blog-card-title">'+esc(p.title)+'</div>'
     + '<div class="blog-card-tags">'+tagsHtml+'</div>'
     + '</div></div>'
@@ -3646,294 +3553,6 @@ function blogStartCountdown(links){
     }
   }, 1000)
 }
-
-
-// ── GAMES TAB ─────────────────────────────────────────────
-async function renderGames(){
-  setContent('<div style="max-width:1100px;margin:0 auto;padding:24px"><div class="loading">Loading games</div></div>')
-  var games = []
-  try{ var r = await GET('/games'); games = r.games || [] }catch(e){}
-  games = shuffleArray(games)
-
-  var isAdmin = S.user && S.user.role === 'admin'
-  var headerBtn = isAdmin
-    ? '<button class="btn btn-grad btn-sm" onclick="goAddGame()">+ Add Game</button>'
-    : ''
-
-  var grid = games.length === 0
-    ? '<div style="text-align:center;padding:60px 20px;color:var(--txt3)"><div style="font-size:40px;margin-bottom:12px">🎮</div>No games available yet.</div>'
-    : games.map(function(g){
-        return '<div class="game-card" data-slug="'+esc(g.slug)+'" onclick="goGameDetail(this)">'
-          + '<div class="game-card-cover">'
-          + (g.cover_url ? '<img src="'+esc(g.cover_url)+'" loading="lazy"/>' : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:40px;background:linear-gradient(135deg,var(--accent2)33,var(--accent)22)">🎮</div>')
-          + (g.is_featured ? '<div class="game-card-featured">⭐ Featured</div>' : '')
-          + '</div>'
-          + '<div class="game-card-body">'
-          + '<div class="game-card-title">'+esc(g.title)+'</div>'
-          + '<div class="game-card-meta">'
-          + (g.platform ? '<span class="game-tag">'+esc(g.platform)+'</span>' : '')
-          + (g.genre ? '<span class="game-tag">'+esc(g.genre)+'</span>' : '')
-          + '<span>⬇ '+(g.downloads||0)+'</span>'
-          + '</div></div></div>'
-      }).join('')
-
-  setContent('<div style="max-width:1100px;margin:0 auto;padding:24px">'
-    + '<div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px">'
-    + '<div><div style="font-family:var(--font-d);font-size:1.6rem;font-weight:700">🎮 Games</div>'
-    + '<div style="color:var(--txt3);font-size:13px;margin-top:2px">Free games to download and play</div></div>'
-    + headerBtn
-    + '</div>'
-    + '<div class="game-grid">'+grid+'</div>'
-    + '</div>')
-  initSearch()
-}
-
-function goGameDetail(el){ go('game-detail', {slug: el.dataset.slug}) }
-function goAddGame(){ go('add-game') }
-
-async function renderGameDetail(){
-  var slug = S.params.slug
-  if(!slug){ go('games'); return }
-  setContent('<div style="max-width:800px;margin:0 auto;padding:24px"><div class="loading">Loading game</div></div>')
-  var game = null
-  try{ var r = await GET('/games/'+slug); game = r.game }catch(e){}
-  if(!game){ toast('Game not found','er'); go('games'); return }
-
-  var isAdmin = S.user && S.user.role === 'admin'
-
-  var iconHtml = game.cover_url
-    ? '<img src="'+esc(game.cover_url)+'" style="width:100%;height:100%;object-fit:cover"/>'
-    : '<span style="font-size:40px">🎮</span>'
-
-  var hasRating = game.rating != null && game.rating !== ''
-  var rating = hasRating ? Number(game.rating).toFixed(1) : null
-  var ratingDisplay = hasRating ? rating : 'Not rated'
-
-  var statsRow = '<div class="gd-stats-row">'
-    + '<span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> '+ratingDisplay+'</span>'
-    + '<span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> '+(game.downloads||0).toLocaleString()+'</span>'
-    + (game.file_size ? '<span>'+esc(game.file_size)+'</span>' : '')
-    + '</div>'
-
-  var screenshotsHtml = (game.screenshots||[]).length
-    ? '<div class="gd-screens">'+game.screenshots.map(function(s){
-        return '<img class="gd-screen" src="'+esc(s)+'" data-src="'+esc(s)+'" onclick="openLightbox(this.dataset.src)" loading="lazy"/>'
-      }).join('')+'</div>'
-    : ''
-
-  var quickStats = '<div class="gd-quickgrid">'
-    + (game.version ? '<div class="gd-quick"><div class="gd-quick-lbl">Version</div><div class="gd-quick-val">'+esc(game.version)+'</div></div>' : '')
-    + (game.platform ? '<div class="gd-quick"><div class="gd-quick-lbl">Platform</div><div class="gd-quick-val">'+esc(game.platform)+'</div></div>' : '')
-    + (game.file_size ? '<div class="gd-quick"><div class="gd-quick-lbl">Size</div><div class="gd-quick-val">'+esc(game.file_size)+'</div></div>' : '')
-    + '<div class="gd-quick"><div class="gd-quick-lbl">Rating</div><div class="gd-quick-val">⭐ '+ratingDisplay+'</div></div>'
-    + '</div>'
-
-  var requirementsHtml = game.requirements
-    ? '<div class="gd-section-title">System Requirements</div><div class="gd-about" style="white-space:pre-wrap">'+esc(game.requirements)+'</div>'
-    : ''
-
-  var detailsTable = '<div class="gd-details">'
-    + '<div class="gd-detail-row"><span class="gd-detail-lbl">Updated</span><span class="gd-detail-val">'+ago(game.created_at)+'</span></div>'
-    + '<div class="gd-detail-row"><span class="gd-detail-lbl">Rating</span><span class="gd-detail-val">'+(hasRating ? rating+' / 5.0' : 'Not rated')+'</span></div>'
-    + '<div class="gd-detail-row"><span class="gd-detail-lbl">Downloads</span><span class="gd-detail-val">'+(game.downloads||0).toLocaleString()+'</span></div>'
-    + '</div>'
-
-  setContent('<div style="max-width:760px;margin:0 auto;padding:20px">'
-    + '<button class="btn btn-ghost btn-sm" onclick="goGames()" style="margin-bottom:16px">← Back to Games</button>'
-
-    + '<div class="gd-header">'
-    + '<div class="gd-icon">'+iconHtml+(game.is_featured?'<div class="gd-icon-featured">⭐</div>':'')+'</div>'
-    + '<div class="gd-header-info">'
-    + '<div class="gd-title">'+esc(game.title)+'</div>'
-    + '<div class="gd-dev">'+esc(game.developer||'Unknown developer')+'</div>'
-    + statsRow
-    + '</div></div>'
-
-    + (S.user
-        ? '<button class="btn btn-grad gd-download-btn" data-id="'+esc(game.id)+'" onclick="downloadGameBtn(this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download</button>'
-        : '<button class="btn btn-grad gd-download-btn" onclick="go(\'login\')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Sign in to Download</button>')
-
-    + (isAdmin ? '<div class="row" style="gap:6px;margin-top:10px"><button class="btn btn-outline btn-sm" data-id="'+esc(game.id)+'" onclick="goEditGame(this)">✎ Edit</button><button class="btn btn-danger btn-sm" data-id="'+esc(game.id)+'" data-title="'+esc(game.title)+'" onclick="deleteGameBtn(this)">🗑 Delete</button></div>' : '')
-
-    + quickStats
-    + screenshotsHtml
-
-    + '<div class="gd-section-title">About this game</div>'
-    + '<div class="gd-about">'+esc(game.description||'No description provided.')+'</div>'
-
-    + requirementsHtml
-
-    + '<div class="gd-section-title">Details</div>'
-    + detailsTable
-
-    + '<div id="gd-related"></div>'
-
-    + '</div>')
-  initSearch()
-  loadRelatedGames(game)
-}
-
-async function loadRelatedGames(game){
-  var holder = document.getElementById('gd-related')
-  if(!holder) return
-  var all = []
-  try{ var r = await GET('/games'); all = r.games || [] }catch(e){ return }
-
-  var related = all.filter(function(g){ return g.id !== game.id && (g.genre === game.genre || g.platform === game.platform) })
-  if(!related.length) return
-
-  // Prefer same genre first, then same platform, cap at 6
-  related.sort(function(a,b){
-    var aScore = (a.genre === game.genre ? 2 : 0) + (a.platform === game.platform ? 1 : 0)
-    var bScore = (b.genre === game.genre ? 2 : 0) + (b.platform === game.platform ? 1 : 0)
-    return bScore - aScore
-  })
-  related = related.slice(0, 6)
-
-  var cardsHtml = related.map(function(g){
-    return '<div class="game-card" data-slug="'+esc(g.slug)+'" onclick="goGameDetail(this)">'
-      + '<div class="game-card-cover">'
-      + (g.cover_url ? '<img src="'+esc(g.cover_url)+'" loading="lazy"/>' : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:32px;background:linear-gradient(135deg,var(--accent2)33,var(--accent)22)">🎮</div>')
-      + (g.is_featured ? '<div class="game-card-featured">⭐ Featured</div>' : '')
-      + '</div>'
-      + '<div class="game-card-body">'
-      + '<div class="game-card-title">'+esc(g.title)+'</div>'
-      + '<div class="game-card-meta">'
-      + (g.platform ? '<span class="game-tag">'+esc(g.platform)+'</span>' : '')
-      + '<span>⬇ '+(g.downloads||0)+'</span>'
-      + '</div></div></div>'
-  }).join('')
-
-  holder.innerHTML = '<div class="gd-section-title">Related games</div>'
-    + '<div class="game-grid">'+cardsHtml+'</div>'
-}
-
-function goGames(){ go('games') }
-
-async function downloadGameBtn(btn){
-  if(!S.user){
-    toast('Sign in to download games 🔒','er')
-    go('login')
-    return
-  }
-  var id = btn.dataset.id
-  btn.disabled = true
-  var originalText = btn.textContent
-  btn.textContent = 'Preparing download…'
-  try{
-    var r = await apiFetch('/games/'+id+'/download', {method:'POST'})
-    window.open(r.download_url, '_blank')
-    toast('Download started! 🎮')
-  }catch(e){ toast(e.message||'Download failed','er') }
-  finally{ btn.disabled = false; btn.textContent = originalText }
-}
-
-// ── ADD / EDIT GAME (admin) ──────────────────────────────
-async function renderAddGame(){
-  if(!S.user || S.user.role !== 'admin'){ toast('Admin access required','er'); go('games'); return }
-  buildGameForm(null)
-}
-
-var editingGameId = null
-function goEditGame(el){ go('edit-game', {id: el.dataset.id}) }
-
-async function renderEditGame(){
-  if(!S.user || S.user.role !== 'admin'){ toast('Admin access required','er'); go('games'); return }
-  var id = S.params.id
-  setContent('<div style="max-width:600px;margin:0 auto;padding:24px"><div class="loading">Loading game</div></div>')
-  var games = []
-  try{ var r = await GET('/games'); games = r.games||[] }catch(e){}
-  var game = games.find(function(g){ return g.id === id })
-  if(!game){ toast('Game not found','er'); go('games'); return }
-  buildGameForm(game)
-}
-
-function buildGameForm(game){
-  editingGameId = game ? game.id : null
-  var screenshotsVal = game && game.screenshots ? game.screenshots.join('\n') : ''
-  setContent('<div style="max-width:600px;margin:0 auto;padding:24px"><div class="card" style="padding:28px">'
-    + '<div style="font-family:var(--font-d);font-size:1.3rem;font-weight:700;margin-bottom:20px">'+(game?'✎ Edit Game':'🎮 Add New Game')+'</div>'
-    + '<div class="fstack">'
-    + '<div class="field"><label>Title *</label><input class="input" id="gf-title" value="'+(game?esc(game.title):'')+'" placeholder="e.g. Shadow Realm Adventures"/></div>'
-    + '<div class="field"><label>Description</label><textarea class="input" id="gf-desc" style="min-height:90px" placeholder="What is this game about?">'+(game?esc(game.description||''):'')+'</textarea></div>'
-    + '<div class="field"><label>Download URL *</label><input class="input" id="gf-url" value="'+(game?esc(game.download_url):'')+'" placeholder="https://drive.google.com/..."/></div>'
-    + '<div class="field"><label>Cover Image URL</label><input class="input" id="gf-cover" value="'+(game?esc(game.cover_url||''):'')+'" placeholder="https://..."/></div>'
-    + '<div class="field"><label>Screenshot URLs (one per line)</label><textarea class="input" id="gf-screens" style="min-height:70px" placeholder="https://...\nhttps://...">'+esc(screenshotsVal)+'</textarea></div>'
-    + '<div class="row wrap" style="gap:12px">'
-    + '<div class="field flex1"><label>Version</label><input class="input" id="gf-version" value="'+(game?esc(game.version||''):'')+'" placeholder="v1.0"/></div>'
-    + '<div class="field flex1"><label>File Size</label><input class="input" id="gf-size" value="'+(game?esc(game.file_size||''):'')+'" placeholder="350 MB"/></div>'
-    + '</div>'
-    + '<div class="row wrap" style="gap:12px">'
-    + '<div class="field flex1"><label>Platform</label><input class="input" id="gf-platform" value="'+(game?esc(game.platform||''):'')+'" placeholder="Windows / Android / etc"/></div>'
-    + '<div class="field flex1"><label>Genre</label><input class="input" id="gf-genre" value="'+(game?esc(game.genre||''):'')+'" placeholder="Action / RPG / etc"/></div>'
-    + '</div>'
-    + '<div class="field"><label>Developer</label><input class="input" id="gf-dev" value="'+(game?esc(game.developer||''):'')+'" placeholder="Studio name"/></div>'
-    + '<div class="field"><label>System Requirements</label><textarea class="input" id="gf-reqs" style="min-height:80px" placeholder="OS: Windows 10/Android 8+&#10;CPU: ...&#10;RAM: 2GB&#10;Storage: 500MB">'+(game?esc(game.requirements||''):'')+'</textarea></div>'
-    + '<div class="field" style="width:140px"><label>Rating (1.0-5.0)</label><input class="input" id="gf-rating" type="number" step="0.1" min="1" max="5" placeholder="e.g. 4.2" value="'+(game&&game.rating!=null?esc(String(game.rating)):'')+'"/></div>'
-    + '<label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="gf-featured" '+(game&&game.is_featured?'checked':'')+'/> Mark as Featured ⭐</label>'
-    + '<div id="gf-err" class="ferr" style="display:none"></div>'
-    + '<div class="row"><button class="btn btn-ghost" onclick="goGames()">Cancel</button><button class="btn btn-grad" onclick="submitGameForm()" style="margin-left:auto">'+(game?'Save Changes':'Add Game')+'</button></div>'
-    + '</div></div></div>')
-}
-
-async function submitGameForm(){
-  var title=(document.getElementById('gf-title')||{}).value||''
-  var desc=(document.getElementById('gf-desc')||{}).value||''
-  var url=(document.getElementById('gf-url')||{}).value||''
-  var cover=(document.getElementById('gf-cover')||{}).value||''
-  var screensRaw=(document.getElementById('gf-screens')||{}).value||''
-  var version=(document.getElementById('gf-version')||{}).value||''
-  var size=(document.getElementById('gf-size')||{}).value||''
-  var platform=(document.getElementById('gf-platform')||{}).value||''
-  var genre=(document.getElementById('gf-genre')||{}).value||''
-  var dev=(document.getElementById('gf-dev')||{}).value||''
-  var reqs=(document.getElementById('gf-reqs')||{}).value||''
-  var ratingRaw=(document.getElementById('gf-rating')||{}).value||''
-  var featured=(document.getElementById('gf-featured')||{}).checked||false
-  var errEl=document.getElementById('gf-err')
-  errEl.style.display='none'
-
-  if(!title.trim()){ errEl.textContent='Title is required'; errEl.style.display='block'; return }
-  if(!url.trim()){ errEl.textContent='Download URL is required'; errEl.style.display='block'; return }
-
-  var rating = null
-  if(ratingRaw.trim() !== ''){
-    var parsed = parseFloat(ratingRaw)
-    if(!isNaN(parsed) && parsed >= 1 && parsed <= 5) rating = parsed
-  }
-
-  var screenshots = screensRaw.split('\n').map(function(s){return s.trim()}).filter(Boolean)
-  var payload = {
-    title: title.trim(), description: desc.trim(), download_url: url.trim(),
-    cover_url: cover.trim()||null, screenshots: screenshots,
-    version: version.trim(), file_size: size.trim(), platform: platform.trim(),
-    genre: genre.trim(), developer: dev.trim(), is_featured: featured,
-    requirements: reqs.trim(), rating: rating
-  }
-
-  try{
-    if(editingGameId){
-      await apiFetch('/admin/games/'+editingGameId, {method:'PATCH', body:JSON.stringify(payload)})
-      toast('Game updated! 🎉')
-    } else {
-      await apiFetch('/admin/games', {method:'POST', body:JSON.stringify(payload)})
-      toast('Game added! 🎉')
-    }
-    go('games')
-  }catch(e){ errEl.textContent=e.message; errEl.style.display='block' }
-}
-
-async function deleteGameBtn(btn){
-  var id=btn.dataset.id, title=btn.dataset.title
-  if(!confirm('Delete "'+title+'"? This cannot be undone.')) return
-  try{
-    await apiFetch('/admin/games/'+id, {method:'DELETE'})
-    toast('Game deleted')
-    go('games')
-  }catch(e){ toast(e.message,'er') }
-}
-
-
 
 
 restoreFromUrl()
