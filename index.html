@@ -1285,6 +1285,28 @@ async function renderGuidelines(){
     +'</div></div></div>')
 }
 
+async function renderAbout(){
+  setContent('<div class="page full" style="max-width:680px">'
+    +'<div class="card" style="padding:32px;text-align:center">'
+    +'<div style="font-size:48px;margin-bottom:12px">🎮</div>'
+    +'<div style="font-family:var(--font-d);font-size:1.8rem;font-weight:800;margin-bottom:6px">ZiphyNet</div>'
+    +'<div style="font-size:14px;color:var(--txt3);margin-bottom:24px">The gaming community built for gamers</div>'
+    +'<div class="legal-text" style="text-align:left">'
+    +'<p>ZiphyNet is a gaming community platform where players connect, share, and discover. Post about your favourite games, join communities, read the latest gaming news, and find new titles to play.</p>'
+    +'<p>Built with a focus on mobile-first experience, ZiphyNet works on any device and can be installed directly from your browser as an app.</p>'
+    +'<h3>Contact</h3>'
+    +'<p>General enquiries: <a href="mailto:hello@ziphynet.com" style="color:var(--accent3)">hello@ziphynet.com</a><br>'
+    +'Safety & reports: <a href="mailto:safety@ziphynet.com" style="color:var(--accent3)">safety@ziphynet.com</a><br>'
+    +'Help & support: <a href="mailto:help@ziphynet.com" style="color:var(--accent3)">help@ziphynet.com</a></p>'
+    +'<h3>Links</h3>'
+    +'<p><a onclick="go(\'privacy\')" style="color:var(--accent3);cursor:pointer">Privacy Policy</a> · '
+    +'<a onclick="go(\'terms\')" style="color:var(--accent3);cursor:pointer">Terms & Conditions</a> · '
+    +'<a onclick="go(\'guidelines\')" style="color:var(--accent3);cursor:pointer">Community Guidelines</a></p>'
+    +'</div>'
+    +'<div style="margin-top:24px;font-size:12px;color:var(--txt3)">ZiphyNet © '+new Date().getFullYear()+'</div>'
+    +'</div></div>')
+}
+
 async function renderBlockedUsers(){
   if(!S.user){ go('login'); return }
   setContent('<div class="page full" style="max-width:600px"><div class="loading">Loading</div></div>')
@@ -2147,7 +2169,7 @@ function renderLogin(){
     +'<div class="auth-card"><div style="font-family:var(--font-d);font-size:1.2rem;font-weight:700;margin-bottom:4px">Welcome back</div>'
     +'<div style="font-size:13px;color:var(--txt3);margin-bottom:24px">Sign in to your ZiphyNet account</div>'
     +'<div class="fstack"><div class="field"><label>Email</label><input class="input" id="le" type="email" placeholder="you@example.com"/></div>'
-    +'<div class="field"><label>Password</label><div class="pw-wrap"><input class="input" id="lp" type="password" placeholder="••••••••" onkeydown="fpEmailKey(event)"/><button class="pw-eye" type="button" data-pwid="lp" onclick="togglePwBtn(this)" tabindex="-1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>'
+    +'<div class="field"><label>Password</label><div class="pw-wrap"><input class="input" id="lp" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="fpEmailKey(event)"/><button class="pw-eye" type="button" data-pwid="lp" onclick="togglePwBtn(this)" tabindex="-1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>'
     +'<div id="lerr" class="ferr" style="display:none"></div>'
     +'<button class="btn btn-grad w-full" id="lbtn" onclick="doLogin()" style="padding:11px;justify-content:center">Sign In</button>'
     +'<div class="auth-divider">or</div>'
@@ -2175,7 +2197,7 @@ function renderRegister(){
     +'<div style="font-size:13px;color:var(--txt3);margin-bottom:24px">The front page of gaming. Free forever.</div>'
     +'<div class="fstack"><div class="field"><label>Username</label><input class="input" id="ru" placeholder="CoolGamer42" maxlength="20"/></div>'
     +'<div class="field"><label>Email</label><input class="input" id="re" type="email" placeholder="you@example.com"/></div>'
-    +'<div class="field"><label>Password</label><div class="pw-wrap"><input class="input" id="rp" type="password" placeholder="Min 8 characters" onkeydown="fpRegKey(event)"/><button class="pw-eye" type="button" data-pwid="rp" onclick="togglePwBtn(this)" tabindex="-1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>'
+    +'<div class="field"><label>Password</label><div class="pw-wrap"><input class="input" id="rp" type="password" placeholder="Min 8 characters" autocomplete="new-password" onkeydown="fpRegKey(event)"/><button class="pw-eye" type="button" data-pwid="rp" onclick="togglePwBtn(this)" tabindex="-1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>'
     +'<div id="rerr" class="ferr" style="display:none"></div>'
     +'<button class="btn btn-grad w-full" id="rbtn" onclick="doRegister()" style="padding:11px;justify-content:center">Create Account</button>'
     +'<div class="auth-divider">or</div>'
@@ -2234,8 +2256,8 @@ function showFPStep(){
       +'<div class="auth-card">'+dots
       +'<div style="font-family:var(--font-d);font-size:1.2rem;font-weight:700;margin-bottom:4px">Set New Password</div>'
       +'<div style="font-size:13px;color:var(--txt3);margin-bottom:24px">Choose a strong password for your account</div>'
-      +'<div class="fstack"><div class="field"><label>New Password</label><div class="pw-wrap"><input class="input" id="fp-pw1" type="password" placeholder="Min 8 characters"/><button class="pw-eye" type="button" data-pwid="fp-pw1" onclick="togglePwBtn(this)" tabindex="-1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>'
-      +'<div class="field"><label>Confirm Password</label><div class="pw-wrap"><input class="input" id="fp-pw2" type="password" placeholder="Repeat password" onkeydown="fpPwKey(event)"/><button class="pw-eye" type="button" data-pwid="fp-pw2" onclick="togglePwBtn(this)" tabindex="-1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>'
+      +'<div class="fstack"><div class="field"><label>New Password</label><div class="pw-wrap"><input class="input" id="fp-pw1" type="password" placeholder="Min 8 characters" autocomplete="new-password"/><button class="pw-eye" type="button" data-pwid="fp-pw1" onclick="togglePwBtn(this)" tabindex="-1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>'
+      +'<div class="field"><label>Confirm Password</label><div class="pw-wrap"><input class="input" id="fp-pw2" type="password" placeholder="Repeat password" autocomplete="new-password" onkeydown="fpPwKey(event)"/><button class="pw-eye" type="button" data-pwid="fp-pw2" onclick="togglePwBtn(this)" tabindex="-1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>'
       +'<div id="fp-err3" class="ferr" style="display:none"></div>'
       +'<button class="btn btn-grad w-full" id="fp-btn3" onclick="fpSetPassword()" style="padding:11px;justify-content:center">Update Password</button></div></div>'
       +'<div class="auth-foot"><a onclick="renderLogin()">← Back to login</a></div></div></div>'
@@ -2458,7 +2480,7 @@ async function adminDeleteCat(id,name){
 // RENDER
 function setContent(html){
   document.getElementById('app').innerHTML=navHtml()+html
-    +'<footer style="text-align:center;color:var(--txt3);font-size:11px;padding:32px 24px;margin-top:32px;border-top:1px solid var(--border)">ZiphyNet © '+new Date().getFullYear()+' · Help · About · Privacy</footer>'
+    +'<footer style="text-align:center;color:var(--txt3);font-size:11px;padding:32px 24px;margin-top:32px;border-top:1px solid var(--border)">ZiphyNet © '+new Date().getFullYear()+' · <a href="mailto:help@ziphynet.com" style="color:var(--txt3)">Help</a> · <a onclick="go(\'about\')" style="color:var(--txt3);cursor:pointer">About</a> · <a onclick="go(\'privacy\')" style="color:var(--txt3);cursor:pointer">Privacy</a></footer>'
   setTimeout(fetchLinkPreviews,150)
   updateBadge()
   updateMbn()
@@ -2482,6 +2504,7 @@ async function render(){
   else if(S.page==='privacy') await renderPrivacyPolicy()
   else if(S.page==='terms') await renderTerms()
   else if(S.page==='guidelines') await renderGuidelines()
+  else if(S.page==='about') await renderAbout()
   else if(S.page==='blocked-users') await renderBlockedUsers()
   else if(S.page==='add-blog') await renderAddBlogPost()
   else if(S.page==='edit-blog') await renderEditBlogPost()
