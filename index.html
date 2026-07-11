@@ -804,6 +804,21 @@ function clearAuth(){
   localStorage.removeItem('gh_votes')
   localStorage.removeItem('gh_saves')
 }
+async function syncUserProfile(){
+  if(!S.user || !S.token) return
+  try{
+    var r = await GET('/auth/me')
+    if(r && r.user){
+      // Merge latest data (avatar, bio, role) into stored user
+      S.user = Object.assign(S.user, {
+        avatar_url: r.user.avatar_url || null,
+        bio: r.user.bio || null,
+        role: r.user.role || S.user.role
+      })
+      localStorage.setItem('gh_user', JSON.stringify(S.user))
+    }
+  }catch(e){}
+}
 async function loadUserVotes(){
   if(!S.user || !S.token) return
   try{
@@ -1074,6 +1089,9 @@ function navHtml(){
       +'<div class="nav-icon-btn" id="notif-bell" onclick="toggleNotifs()" title="Notifications">'
       +'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>'
       +'<span class="nav-badge" id="notif-count"></span></div>'
+      +'<div class="nav-icon-btn" onclick="goSettings()" title="Settings">'
+      +'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>'
+      +'</div>'
       +'<button class="btn btn-ghost btn-sm" onclick="logout()">Sign out</button>'
     : '<button class="btn btn-outline btn-sm" onclick="go(\'login\')">Log in</button>'
       +'<button class="btn btn-grad btn-sm" onclick="go(\'register\')">Sign up free</button>'
@@ -3949,9 +3967,9 @@ function blogStartCountdown(links){
 
 restoreFromUrl()
 startNotifPolling()
-// Load user's votes from server BEFORE first render so like state shows correctly
+// Sync latest user data (avatar etc) and votes before first render
 if(S.user){
-  loadUserVotes().then(function(){
+  Promise.all([syncUserProfile(), loadUserVotes()]).then(function(){
     if(S.page==='home') go('home')
     else render()
   })
@@ -3959,7 +3977,6 @@ if(S.user){
   if(S.page==='home') go('home')
   else render()
 }
-// Show community guidelines consent on first visit
 setTimeout(checkConsent, 800)
 </script>
 <div class="mobile-bottom-nav" id="mbn" style="grid-template-columns:repeat(6,1fr)">
