@@ -882,6 +882,14 @@ function restoreFromUrl(){
   }catch(e){}
 }
 window.addEventListener('popstate',function(e){
+  // If mobile DM chat overlay is open, close it first (like native app back)
+  var overlay = document.getElementById('chat-overlay')
+  if(overlay){
+    overlay.remove()
+    var layout = document.getElementById('dm-layout')
+    if(layout) layout.classList.remove('chat-open')
+    return
+  }
   if(e.state&&e.state.page){S.page=e.state.page;S.params=e.state.params||{};render()}
   else{S.page='home';S.params={};render()}
 })
@@ -1142,6 +1150,18 @@ function sidebarHtml(cats){
 }
 
 function goMessages(){ go('messages',{}) }
+function copyThreadLink(btn){
+  var tid = btn.dataset.tid
+  var url = window.location.origin + window.location.pathname + '#thread/' + tid
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(url).then(function(){ toast('Link copied!') }).catch(function(){
+      prompt('Copy this link:', url)
+    })
+  } else {
+    prompt('Copy this link:', url)
+  }
+}
+
 function sharePostBtn(btn){ sharePost(btn.dataset.tid, btn.dataset.ttitle) }
 function goCategories(){ go('categories') }
 function goCreateCommunity(){ go('create-community') }
@@ -1177,7 +1197,7 @@ function postRowHtml(t){
     +'<div class="post-actions">'
     +ivbarHtml(t.id,score,'thread')
     +'<button class="post-btn" onclick="event.stopPropagation();go(\'thread\',{id:\''+esc(t.id)+'\'})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>'+(t.reply_count||0)+' Comments</button>'
-    +'<button class="post-btn" onclick="event.stopPropagation();navigator.clipboard&&navigator.clipboard.writeText(window.location.href);toast(\'Link copied!\')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Copy</button>'
+    +'<button class="post-btn" data-tid="'+esc(t.id)+'" onclick="event.stopPropagation();copyThreadLink(this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Copy</button>'
     +(S.user?'<button class="post-btn" data-tid="'+esc(t.id)+'" data-ttitle="'+esc(t.title.slice(0,60))+'" onclick="event.stopPropagation();sharePostBtn(this)" title="Share to community"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Share</button>':'')
     +'<button class="post-btn'+(isSaved?' saved':'')+'" onclick="event.stopPropagation();toggleSave(\''+esc(t.id)+'\',this)">🔖 '+(isSaved?'Saved':'Save')+'</button>'
     +del
@@ -2123,11 +2143,11 @@ async function renderMessages(){
 function dmSelectBtn(el){
   var uid = el.dataset.uid, uname = el.dataset.uname, avatar = el.dataset.avatar||''
   S.params = {uid: uid, uname: uname}
-  try{ history.replaceState({page:'messages',params:S.params},'','#messages') }catch(e){}
+  try{ history.pushState({page:'messages',params:S.params},'','#messages/'+uid) }catch(e){}
   document.querySelectorAll('.dm-item').forEach(function(e){ e.classList.toggle('active', e.dataset.uid===uid) })
   currentDMUser = {id: uid, username: uname, avatar_url: avatar||null}
   if(window.innerWidth <= 600) {
-    dmMobileOpenChat(uid, uname)
+    dmMobileOpenChat(uid, uname, avatar)
   } else {
     var layout = document.getElementById('dm-layout')
     if(layout) layout.classList.add('chat-open')
@@ -2135,12 +2155,10 @@ function dmSelectBtn(el){
   }
 }
 
-function dmMobileOpenChat(uid, uname){
-  // On mobile: replace entire layout with full-screen chat
+function dmMobileOpenChat(uid, uname, avatar){
   var layout = document.getElementById('dm-layout')
   if(!layout) return
-  currentDMUser = {id: uid, username: uname}
-  // Add dm-main if not present
+  currentDMUser = {id: uid, username: uname, avatar_url: avatar||null}
   var existing = document.getElementById('dm-main')
   if(!existing){
     var main = document.createElement('div')
@@ -2191,12 +2209,26 @@ async function dmUpdateOnlineStatus(){
     var r = await GET('/users/'+currentDMUser.username)
     var user = r.user
     if(!user){ statusEl.textContent=''; return }
+
+    // Update avatar in header if it was missing
+    if(user.avatar_url && !currentDMUser.avatar_url){
+      currentDMUser.avatar_url = user.avatar_url
+      var headerAvEl = statusEl.closest('.dm-main-hd')
+      if(headerAvEl){
+        var avWrap = headerAvEl.querySelector('.avatar')
+        if(avWrap && avWrap.children.length === 0){
+          // Was showing initials — replace with image
+          avWrap.innerHTML = '<img src="'+esc(user.avatar_url)+'" alt="'+esc(user.username)+'" style="width:100%;height:100%;object-fit:cover;border-radius:inherit"/>'
+        }
+      }
+    }
+
     var online = user.online
     var lastSeen = user.last_seen
     if(online){
       statusEl.innerHTML = '<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block"></span>Active now</span>'
     } else if(lastSeen){
-      var d = new Date(lastSeen.indexOf('T')>=0?lastSeen:lastSeen+' UTC')
+      var d = new Date(lastSeen.indexOf('T')>=0?lastSeen:lastSeen.replace(' ','T')+'Z')
       var diff = Date.now()-d.getTime()
       var txt = diff < 60*60*1000 ? Math.floor(diff/60000)+'m ago'
               : diff < 24*60*60*1000 ? Math.floor(diff/3600000)+'h ago'
@@ -2885,7 +2917,7 @@ function mbnProfile(){
   else go('login')
 }
 function updateMbn(){
-  var map={home:'mbn-home',categories:'mbn-cats','new-thread':'mbn-post',profile:'mbn-profile',messages:'mbn-profile',settings:'mbn-settings',privacy:'mbn-settings',terms:'mbn-settings',blog:'mbn-blog','blog-post':'mbn-blog','add-blog':'mbn-blog','edit-blog':'mbn-blog'}
+  var map={home:'mbn-home',categories:'mbn-cats','new-thread':'mbn-post',profile:'mbn-profile',messages:'mbn-profile',blog:'mbn-blog','blog-post':'mbn-blog','add-blog':'mbn-blog','edit-blog':'mbn-blog'}
   Object.keys(map).forEach(function(page){
     var el=document.getElementById(map[page])
     if(el) el.classList.toggle('active',S.page===page)
@@ -3988,10 +4020,7 @@ setTimeout(checkConsent, 800)
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
     Browse
   </button>
-  <button class="mbn-btn" id="mbn-settings" onclick="go('settings')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-    Settings
-  </button>
+
   <button class="mbn-btn" id="mbn-blog" onclick="go('blog')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
     Blog
