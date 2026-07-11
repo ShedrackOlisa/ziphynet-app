@@ -836,6 +836,7 @@ function go(page,params){
     if(params&&params.username) hash+='/'+params.username
     if(params&&params.category) hash+='/'+params.category
     if(params&&params.slug) hash+='/'+params.slug
+    if(params&&params.q) hash+='?q='+encodeURIComponent(params.q)
     history.pushState({page:page,params:params||{}}, '', hash)
   }catch(e){}
   render()
@@ -844,6 +845,10 @@ function restoreFromUrl(){
   try{
     var hash=window.location.hash.slice(1)
     if(!hash) return
+    // Split off any ?q= query string from the hash
+    var qIdx = hash.indexOf('?')
+    var queryStr = qIdx >= 0 ? hash.slice(qIdx+1) : ''
+    if(qIdx >= 0) hash = hash.slice(0, qIdx)
     var parts=hash.split('/')
     var page=parts[0], param=parts[1]
     if(!page) return
@@ -852,7 +857,13 @@ function restoreFromUrl(){
     else if(page==='profile'&&param) S.params={username:param}
     else if(page==='forum'&&param) S.params={category:param}
     else if(page==='manage-community'&&param) S.params={slug:param}
+    else if(page==='game-detail'&&param) S.params={slug:param}
     else S.params={}
+    // Restore query string params (e.g. ?q=gta for search)
+    if(queryStr){
+      var qp = new URLSearchParams(queryStr)
+      if(qp.get('q')) S.params.q = qp.get('q')
+    }
   }catch(e){}
 }
 window.addEventListener('popstate',function(e){
