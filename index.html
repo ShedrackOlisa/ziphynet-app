@@ -1332,6 +1332,11 @@ function showChangePassword(){
   setTimeout(function(){ var el=document.getElementById('cpw-old'); if(el) el.focus() }, 100)
 }
 
+function closeChangePw(){
+  var el = document.getElementById('changepw-modal')
+  if(el) el.remove()
+}
+
 async function fpResetForLoggedInUser(){
   // User is already logged in — send reset code to THEIR email only, skip email entry step
   if(!S.user) { renderForgotPassword(); return }
