@@ -1321,7 +1321,7 @@ function showChangePassword(){
     +'<div class="field"><label>Confirm New Password</label><div class="pw-wrap"><input class="input" id="cpw-confirm" type="password" placeholder="Repeat new password" autocomplete="new-password"/><button class="pw-eye" type="button" data-pwid="cpw-confirm" onclick="togglePwBtn(this)" tabindex="-1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>'
     +'</div>'
     +'<div id="cpw-err" class="ferr" style="display:none;margin-bottom:10px"></div>'
-    +'<div style="text-align:center;margin-bottom:12px"><button class="btn btn-ghost btn-sm" onclick="closeChangePw();renderForgotPassword()" style="font-size:12px;color:var(--txt3)">Forgot current password? Reset it instead</button></div>'
+    +'<div style="text-align:center;margin-bottom:12px"><button class="btn btn-ghost btn-sm" onclick="closeChangePw();fpResetForLoggedInUser()" style="font-size:12px;color:var(--txt3)">Forgot current password? Reset it instead</button></div>'
     +'<div class="row" style="gap:8px">'
     +'<button class="btn btn-ghost flex1" onclick="closeChangePw()">Cancel</button>'
     +'<button class="btn btn-grad flex1" onclick="submitChangePassword()" id="cpw-btn">Update Password</button>'
@@ -1332,10 +1332,36 @@ function showChangePassword(){
   setTimeout(function(){ var el=document.getElementById('cpw-old'); if(el) el.focus() }, 100)
 }
 
-function closeChangePw(){
-  var el = document.getElementById('changepw-modal')
-  if(el) el.remove()
+async function fpResetForLoggedInUser(){
+  // User is already logged in — send reset code to THEIR email only, skip email entry step
+  if(!S.user) { renderForgotPassword(); return }
+  var email = S.user.email
+  if(!email) { toast('No email on your account','er'); return }
+  toast('Sending reset code to ' + email + '...', 'info')
+  try{
+    var r = await POST('/auth/forgot-password', {email: email})
+    fpEmail = email
+    fpStep = 2
+    if(r.dev_mode && r.dev_code){
+      toast('Dev mode: code is ' + r.dev_code, 'info')
+      showFPStep()
+      setTimeout(function(){
+        var code = r.dev_code.toString()
+        for(var i=0;i<6;i++){
+          var el=document.getElementById('ci'+i)
+          if(el){ el.value=code[i]||''; el.classList.toggle('filled',!!code[i]) }
+        }
+      }, 200)
+    } else {
+      toast('Reset code sent to ' + email, 'info')
+      showFPStep()
+    }
+  } catch(e){
+    toast(e.message || 'Failed to send code', 'er')
+  }
 }
+
+
 
 async function submitChangePassword(){
   var oldPw = (document.getElementById('cpw-old')||{}).value||''
@@ -2631,7 +2657,13 @@ async function fpSetPassword(){
   if(pw1.length<8){errEl.textContent='Password must be at least 8 characters';errEl.style.display='flex';return}
   if(pw1!==pw2){errEl.textContent='Passwords do not match';errEl.style.display='flex';return}
   btn.disabled=true;btn.textContent='Updating…'
-  try{await POST('/auth/reset-password',{email:fpEmail,code:fpCode,new_password:pw1});toast('Password updated! Please log in 🎉','ok');renderLogin()}
+  try{
+    await POST('/auth/reset-password',{email:fpEmail,code:fpCode,new_password:pw1})
+    toast('Password updated successfully!','ok')
+    // If user was logged in (came from Settings), go back to Settings; otherwise go to login
+    if(S.user) go('settings')
+    else renderLogin()
+  }
   catch(e){errEl.textContent=e.message;errEl.style.display='flex';btn.disabled=false;btn.textContent='Update Password';if(e.message.includes('expired')||e.message.includes('Invalid'))setTimeout(function(){fpStep=2;showFPStep()},1500)}
 }
 
