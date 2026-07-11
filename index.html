@@ -1585,7 +1585,7 @@ async function renderHome(){
   var sort=S.params.sort||'hot',cats=[],threads=[]
   try{
     var r1=await GET('/forum/categories');cats=r1.categories||[]
-    var r2=await GET('/forum/threads?sort='+(sort==='hot'?'popular':'latest'));threads=r2.threads||[]
+    var r2=await GET('/forum/threads?sort='+sort);threads=r2.threads||[]
   }catch(e){toast(e.message,'er')}
 
   var noExplicitSortChosen = !S.params.sort
@@ -1616,7 +1616,7 @@ async function renderForum(){
   setContent('<div class="page"><div class="loading">Loading</div></div>')
   var cat=S.params.category||'',sort=S.params.sort||'hot',page=S.params.page||1
   var cats=[],threads=[],pagination={},activeCat=null
-  try{var r1=await GET('/forum/categories');cats=r1.categories||[];var r2=await GET('/forum/threads?'+(cat?'category='+cat+'&':'')+'sort='+(sort==='hot'?'popular':'latest')+'&page='+page);threads=r2.threads||[];pagination=r2.pagination||{};activeCat=cats.find(function(c){return c.slug===cat})}catch(e){toast(e.message,'er')}
+  try{var r1=await GET('/forum/categories');cats=r1.categories||[];var r2=await GET('/forum/threads?'+(cat?'category='+cat+'&':'')+'sort='+sort+'&page='+page);threads=r2.threads||[];pagination=r2.pagination||{};activeCat=cats.find(function(c){return c.slug===cat})}catch(e){toast(e.message,'er')}
   var col=activeCat?cc(activeCat.slug):'var(--accent)'
   // Check if user can manage this community
   // 1. Site admin/mod
