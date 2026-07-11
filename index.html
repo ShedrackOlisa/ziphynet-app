@@ -268,11 +268,19 @@ input,textarea,select{font-family:inherit;font-size:14px;color:var(--txt1)}
 
 /* ── Very small (≤380px) ── */
 @media(max-width:380px){
-  .nav-search{ display:none } /* hide search on tiny screens */
-  .post-btn span{ display:none } /* hide button text, keep icon */
+  .nav-search{ display:none }
+  .nav-search-btn{ display:flex !important }
+  .post-btn span{ display:none }
   .code-input{ width:36px; height:44px; font-size:16px }
   .auth-card{ padding:14px }
 }
+/* Mobile search overlay */
+.nav-search-btn{display:none;background:none;border:none;color:var(--txt2);width:34px;height:34px;border-radius:50%;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.nav-search-btn:hover{background:var(--glass2);color:var(--txt1)}
+.mobile-search-overlay{display:none;position:fixed;top:0;left:0;right:0;z-index:500;background:var(--bg1);padding:10px 12px;border-bottom:1px solid var(--border);align-items:center;gap:8px}
+.mobile-search-overlay.show{display:flex}
+.mobile-search-overlay input{flex:1;background:var(--glass);border:1px solid var(--border2);border-radius:99px;padding:9px 16px;color:var(--txt1);font-size:14px;outline:none}
+.mobile-search-overlay input:focus{border-color:var(--accent)}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:99px;font-size:13px;font-weight:600;transition:all .15s;white-space:nowrap;line-height:1}
 .btn-grad{background:var(--grad2);color:#fff;box-shadow:0 2px 12px rgba(168,85,247,.35)}
 .btn-grad:hover{box-shadow:0 4px 20px rgba(168,85,247,.5);transform:translateY(-1px)}
@@ -754,6 +762,7 @@ function clearAuth(){S.token=null;S.user=null;localStorage.removeItem('gh_token'
 
 function go(page,params){
   S.page=page;S.params=params||{};window.scrollTo(0,0)
+  closeMobileSearch()
   try{
     var hash='#'+page
     if(params&&params.id) hash+='/'+params.id
@@ -911,6 +920,18 @@ function openLightbox(src){
 
 // SEARCH
 var srchTimer=null
+function openMobileSearch(){
+  var overlay = document.getElementById('mobile-srch-overlay')
+  var input = document.getElementById('mobile-srch')
+  if(!overlay) return
+  overlay.classList.add('show')
+  if(input){ input.value=''; setTimeout(function(){ input.focus() }, 100) }
+}
+function closeMobileSearch(){
+  var overlay = document.getElementById('mobile-srch-overlay')
+  if(overlay) overlay.classList.remove('show')
+}
+
 function initSearch(){
   var inp=document.getElementById('srch'),dd=document.getElementById('srch-dd')
   if(!inp||!dd) return
@@ -922,6 +943,23 @@ function initSearch(){
   }
   inp.onkeydown=function(e){if(e.key==='Enter'&&this.value.trim()){dd.classList.remove('show');go('search',{q:this.value.trim()})}}
   document.addEventListener('click',function(e){if(!e.target.closest('.nav-search'))dd.classList.remove('show')})
+
+  // Mobile search overlay input
+  var mobileInp=document.getElementById('mobile-srch')
+  if(mobileInp){
+    mobileInp.oninput=function(){
+      clearTimeout(srchTimer)
+      if(!this.value.trim()) return
+      var q=this.value.trim()
+      srchTimer=setTimeout(function(){runSearch(q)},300)
+    }
+    mobileInp.onkeydown=function(e){
+      if(e.key==='Enter'&&this.value.trim()){
+        closeMobileSearch()
+        go('search',{q:this.value.trim()})
+      }
+    }
+  }
 }
 async function runSearch(q){
   var dd=document.getElementById('srch-dd');if(!dd)return
@@ -966,12 +1004,17 @@ function navHtml(){
     +'<svg viewBox="0 0 24 24" fill="none" stroke="url(#ng)" stroke-width="2.2"><defs><linearGradient id="ng" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#a855f7"/><stop offset="100%" stop-color="#ec4899"/></linearGradient></defs>'
     +'<path d="M21 6H3a2 2 0 00-2 2v8a2 2 0 002 2h18a2 2 0 002-2V8a2 2 0 00-2-2z"/><path d="M9 10v4M7 12h4M17 10v.01M15 12v.01"/></svg><span class="nav-logo-text">ZiphyNet</span></div>'
     +'<div class="nav-blog-link" onclick="go(\'blog\')">📰 Blog</div>'
-    
+
     +'<div class="nav-search">'
     +'<span class="search-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></span>'
-    +'<input id="srch" placeholder="Search games, posts, users…" autocomplete="off"/>'
+    +'<input id="srch" placeholder="Search posts, users…" autocomplete="off"/>'
     +'<div class="srch-dd" id="srch-dd"></div></div>'
+    +'<button class="nav-search-btn" onclick="openMobileSearch()" title="Search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></button>'
     +'<div class="nav-auth">'+auth+'</div></nav>'
+    +'<div class="mobile-search-overlay" id="mobile-srch-overlay">'
+    +'<input id="mobile-srch" placeholder="Search posts, users…" autocomplete="off" onkeydown="if(event.key===\'Escape\')closeMobileSearch()"/>'
+    +'<button class="btn btn-ghost btn-sm" onclick="closeMobileSearch()">Cancel</button>'
+    +'</div>'
 }
 
 // SIDEBAR
@@ -3187,12 +3230,16 @@ async function renderBlog(){
   var posts = []
   try{ var r = await GET('/blog?'+qs.join('&')); posts = r.posts||[] }catch(e){ toast('Failed to load blog','er') }
 
-  var tabs = [
-    {id:'', label:'All Posts'},
-    {id:'news', label:'📰 News'},
-    {id:'apk', label:'📱 APK'},
-    {id:'psp', label:'🎮 PPSSPP'}
-  ]
+  var tabs = [{id:'', label:'All Posts'},{id:'news', label:'📰 News'}]
+  // Add any extra categories found in fetched posts dynamically
+  var knownCats = ['', 'news']
+  posts.forEach(function(p){
+    if(p.category && !knownCats.includes(p.category)){
+      knownCats.push(p.category)
+      var label = p.category.charAt(0).toUpperCase() + p.category.slice(1)
+      tabs.push({id:p.category, label:label})
+    }
+  })
   var tabsHtml = tabs.map(function(t){
     return '<div class="blog-tab'+(cat===t.id?' active':'')+'" data-cat="'+t.id+'" onclick="blogTabClick(this)">'+t.label+'</div>'
   }).join('')
@@ -3410,6 +3457,23 @@ function rteGetContent(editorId){
   return visualEl ? visualEl.innerHTML.trim() : ''
 }
 
+function blogCatSelectChange(sel){
+  var customInput = document.getElementById('bf-category-custom')
+  if(!customInput) return
+  if(sel.value === '__custom__'){
+    customInput.style.display = 'block'
+    customInput.focus()
+  } else {
+    customInput.style.display = 'none'
+    customInput.value = ''
+  }
+}
+function blogCatCustomInput(inp){
+  // Keep the select visually on __custom__ while typing
+  var sel = document.getElementById('bf-category')
+  if(sel) sel.value = '__custom__'
+}
+
 function goAddBlogPost(){ go('add-blog') }
 function goEditBlogPost(el){ go('edit-blog', {id: el.dataset.id}) }
 var editingBlogId = null
@@ -3461,11 +3525,7 @@ function buildBlogForm(post){
     + '<div class="field"><label>Title *</label><input class="input" id="bf-title" value="'+(post?esc(post.title):'')+'" placeholder="e.g. Top 10 PPSSPP Games for 2026"/></div>'
     + '<div class="field"><label>Short Description</label><textarea class="input" id="bf-desc" style="min-height:60px" placeholder="One or two sentence summary shown on the blog card">'+(post?esc(post.description||''):'')+'</textarea></div>'
     + '<div class="field"><label>Cover Image URL</label><input class="input" id="bf-image" value="'+(post?esc(post.image_url||''):'')+'" placeholder="https://..."/></div>'
-    + '<div class="field"><label>Category</label><select class="input" id="bf-category">'
-    + '<option value="apk"'+(post&&post.category==='apk'?' selected':'')+'>📱 APK Games</option>'
-    + '<option value="psp"'+(post&&post.category==='psp'?' selected':'')+'>🎮 PPSSPP Games</option>'
-    + '<option value="news"'+(post&&post.category==='news'?' selected':'')+'>📰 News</option>'
-    + '</select></div>'
+    + '<div class="field"><label>Category</label>'    + '<div class="row" style="gap:8px">'    + '<select class="input" id="bf-category" onchange="blogCatSelectChange(this)" style="flex:1">'    + '<option value="news"'+(post&&post.category==='news'?' selected':post&&post.category&&post.category!=='news'?'':' selected')+'>📰 News</option>'    + (post&&post.category&&post.category!=='news'?'<option value="'+esc(post.category)+'" selected>'+esc(post.category)+'</option>':'')    + '<option value="__custom__">+ Add custom category…</option>'    + '</select>'    + '<input class="input" id="bf-category-custom" placeholder="e.g. Guides" style="flex:1;display:none" oninput="blogCatCustomInput(this)"/>'    + '</div></div>'
     + '<div class="field"><label>Tags (comma separated)</label><input class="input" id="bf-tags" value="'+esc(tagsVal)+'" placeholder="action, multiplayer, offline"/></div>'
     + '<div class="field"><label>Article Body</label>'+rteEditorHtml('bf-body-rte', 'Start writing your post… use the toolbar for headings, lists, links, tables, bold/underline, or switch to HTML mode to paste raw markup.', bodyInitialHtml)+'</div>'
     + '<div class="row wrap" style="gap:12px">'
@@ -3482,7 +3542,10 @@ async function submitBlogForm(){
   var title=(document.getElementById('bf-title')||{}).value||''
   var desc=(document.getElementById('bf-desc')||{}).value||''
   var image=(document.getElementById('bf-image')||{}).value||''
-  var category=(document.getElementById('bf-category')||{}).value||'apk'
+  var catSelect=(document.getElementById('bf-category')||{}).value||'news'
+  var catCustom=(document.getElementById('bf-category-custom')||{}).value||''
+  var category = catSelect==='__custom__' ? catCustom.trim().toLowerCase().replace(/[^a-z0-9-]/g,'-') : catSelect
+  if(!category) category='news'
   var tagsRaw=(document.getElementById('bf-tags')||{}).value||''
   var bodyHtml = rteGetContent('bf-body-rte')
   var reqMinRaw=(document.getElementById('bf-reqmin')||{}).value||''
