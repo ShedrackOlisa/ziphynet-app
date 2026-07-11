@@ -1830,6 +1830,7 @@ async function renderSearch(){
     if(res.threads.length){h+='<div style="font-weight:700;font-size:13px;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">📝 Posts</div>'+res.threads.map(postRowHtml).join('')}
     if(!res.users.length&&!res.threads.length)h+='<div class="card"><div class="empty"><div class="empty-icon">🔍</div><p style="font-weight:600;margin-bottom:6px">No results found</p></div></div>'
     h+='</div></div>';setContent(h)
+    if(S.user) loadUserVotes()
   }catch(e){setContent('<div class="page wide"><div class="card"><div class="empty">Search failed.</div></div></div>')}
   initSearch()
   var inp=document.getElementById('srch');if(inp)inp.value=q
@@ -3937,9 +3938,16 @@ function blogStartCountdown(links){
 
 restoreFromUrl()
 startNotifPolling()
-if(S.user) loadUserVotes()
-if(S.page==='home') go('home')
-else render()
+// Load user's votes from server BEFORE first render so like state shows correctly
+if(S.user){
+  loadUserVotes().then(function(){
+    if(S.page==='home') go('home')
+    else render()
+  })
+} else {
+  if(S.page==='home') go('home')
+  else render()
+}
 // Show community guidelines consent on first visit
 setTimeout(checkConsent, 800)
 </script>
