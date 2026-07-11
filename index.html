@@ -729,6 +729,36 @@ select.input{appearance:none;cursor:pointer}
 .rte-editor code{background:var(--bg3);padding:2px 6px;border-radius:4px;font-family:monospace;font-size:12.5px}
 .rte-html-editor{width:100%;min-height:280px;max-height:600px;background:var(--bg0);color:var(--txt1);border:none;outline:none;padding:16px;font-family:'Courier New',monospace;font-size:12.5px;line-height:1.6;resize:vertical}
 
+/* BROWSE PAGE */
+.browse-hero{background:linear-gradient(135deg,#7c3aed,#ec4899);padding:40px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:24px}
+.browse-hero-inner{flex:1;min-width:200px}
+.browse-hero-stats{display:flex;gap:24px;flex-shrink:0}
+.browse-stat{text-align:center;background:rgba(255,255,255,.12);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.2);border-radius:var(--r-xl);padding:14px 20px;min-width:80px}
+.browse-stat-num{font-family:var(--font-d);font-size:1.6rem;font-weight:800;color:#fff}
+.browse-stat-lbl{font-size:11px;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+.browse-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.browse-card{background:var(--bg1);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;cursor:pointer;transition:all .2s;display:flex;flex-direction:column}
+.browse-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 32px rgba(168,85,247,.2)}
+.browse-card-banner{position:relative;height:90px;overflow:hidden;flex-shrink:0}
+.browse-card-icon{width:52px;height:52px;border-radius:14px;background:var(--bg2);border:3px solid var(--bg1);display:flex;align-items:center;justify-content:center;overflow:hidden;margin:-26px 0 0 16px;position:relative;z-index:1;flex-shrink:0}
+.browse-card-body{padding:10px 16px 14px;flex:1;display:flex;flex-direction:column;gap:6px}
+.browse-card-name{font-family:var(--font-d);font-size:15px;font-weight:700;line-height:1.2}
+.browse-card-desc{font-size:12px;color:var(--txt3);line-height:1.5;flex:1;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.browse-card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:8px;border-top:1px solid var(--border)}
+.browse-create-card{border:2px dashed var(--border2);background:transparent;min-height:200px}
+.browse-create-card:hover{border-color:var(--accent);background:rgba(168,85,247,.05)}
+@media(max-width:600px){
+  .browse-hero{padding:24px 16px;flex-direction:column;align-items:flex-start}
+  .browse-hero-stats{gap:12px}
+  .browse-stat{padding:10px 14px;min-width:60px}
+  .browse-stat-num{font-size:1.2rem}
+  .browse-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+  .browse-card-banner{height:70px}
+  .browse-card-icon{width:42px;height:42px;border-radius:10px;margin:-21px 0 0 12px}
+  .browse-card-body{padding:8px 12px 12px}
+  .browse-card-name{font-size:13px}
+}
+
 /* SETTINGS PAGE */
 .settings-row{width:100%;display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:none;border:none;border-bottom:1px solid var(--border);color:var(--txt1);font-size:14px;font-weight:500;cursor:pointer;text-align:left;font-family:var(--font)}
 .settings-row:last-child{border-bottom:none}
@@ -757,8 +787,45 @@ const S = {
   votes: JSON.parse(localStorage.getItem('gh_votes')||'{}'),
   saves: JSON.parse(localStorage.getItem('gh_saves')||'{}'),
 }
-function setAuth(t,u){S.token=t;S.user=u;localStorage.setItem('gh_token',t);localStorage.setItem('gh_user',JSON.stringify(u))}
-function clearAuth(){S.token=null;S.user=null;localStorage.removeItem('gh_token');localStorage.removeItem('gh_user')}
+function setAuth(t,u){
+  S.token=t;S.user=u
+  localStorage.setItem('gh_token',t)
+  localStorage.setItem('gh_user',JSON.stringify(u))
+  // Clear stale votes from any previous session, then reload from server
+  S.votes={}
+  localStorage.removeItem('gh_votes')
+  loadUserVotes()
+}
+function clearAuth(){
+  S.token=null;S.user=null
+  S.votes={};S.saves={}
+  localStorage.removeItem('gh_token')
+  localStorage.removeItem('gh_user')
+  localStorage.removeItem('gh_votes')
+  localStorage.removeItem('gh_saves')
+}
+async function loadUserVotes(){
+  if(!S.user || !S.token) return
+  try{
+    var r = await GET('/votes/mine')
+    if(r && r.votes){
+      S.votes = r.votes
+      localStorage.setItem('gh_votes', JSON.stringify(S.votes))
+      // Refresh any visible vote bars on the current page
+      document.querySelectorAll('.ivbar').forEach(function(bar){
+        var id = bar.dataset.id
+        var type = bar.dataset.type
+        var v = S.votes[id] || 0
+        var upBtn = bar.querySelector('.ivbtn:first-child')
+        var dnBtn = bar.querySelector('.ivbtn:last-child')
+        var scoreEl = bar.querySelector('.ivscore')
+        if(upBtn){ upBtn.className='ivbtn'+(v===1?' liked':''); var s=upBtn.querySelector('svg'); if(s)s.setAttribute('fill',v===1?'currentColor':'none') }
+        if(dnBtn){ dnBtn.className='ivbtn'+(v===-1?' disliked':''); var s2=dnBtn.querySelector('svg'); if(s2)s2.setAttribute('fill',v===-1?'currentColor':'none') }
+        if(scoreEl){ scoreEl.style.color=v===1?'var(--accent)':v===-1?'var(--red)':'var(--txt2)' }
+      })
+    }
+  }catch(e){}
+}
 
 function go(page,params){
   S.page=page;S.params=params||{};window.scrollTo(0,0)
@@ -817,7 +884,7 @@ function toast(msg,type){
 }
 function ago(d){
   if(!d) return ''
-  var date=new Date(d.indexOf('T')>=0||d.indexOf('Z')>=0?d:d+' UTC')
+  var date=new Date(d.indexOf('T')>=0?d:d.replace(' ','T')+'Z')
   var s=Math.floor((Date.now()-date.getTime())/1000)
   if(s<5) return 'just now'
   if(s<60) return s+'s ago'
@@ -1216,6 +1283,7 @@ async function renderSettings(){
 
     +'<div class="card" style="overflow:hidden;margin-bottom:16px">'
     +'<div style="padding:14px 18px;font-size:11px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border)">Account & Safety</div>'
+    +'<button class="settings-row" onclick="showChangePassword()"><span>🔑 Change Password</span><span>›</span></button>'
     +'<button class="settings-row" onclick="go(\'blocked-users\')"><span>🚫 Blocked Users</span><span>›</span></button>'
     +'</div>'
 
@@ -1238,6 +1306,62 @@ function setFeedPreference(val){
   localStorage.setItem('gh_feed_pref', val)
   toast(val==='random' ? 'Feed will now show a random mix' : 'Feed will now show top posts first')
 }
+
+function showChangePassword(){
+  var existing = document.getElementById('changepw-modal')
+  if(existing) existing.remove()
+  var div = document.createElement('div')
+  div.id = 'changepw-modal'
+  div.className = 'report-modal'
+  div.innerHTML = '<div class="report-modal-box" style="max-width:400px">'
+    +'<div style="font-family:var(--font-d);font-size:1.1rem;font-weight:700;margin-bottom:16px">🔑 Change Password</div>'
+    +'<div class="fstack">'
+    +'<div class="field"><label>Current Password</label><div class="pw-wrap"><input class="input" id="cpw-old" type="password" placeholder="Your current password" autocomplete="current-password"/><button class="pw-eye" type="button" data-pwid="cpw-old" onclick="togglePwBtn(this)" tabindex="-1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>'
+    +'<div class="field"><label>New Password</label><div class="pw-wrap"><input class="input" id="cpw-new" type="password" placeholder="Min 8 characters" autocomplete="new-password"/><button class="pw-eye" type="button" data-pwid="cpw-new" onclick="togglePwBtn(this)" tabindex="-1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>'
+    +'<div class="field"><label>Confirm New Password</label><div class="pw-wrap"><input class="input" id="cpw-confirm" type="password" placeholder="Repeat new password" autocomplete="new-password"/><button class="pw-eye" type="button" data-pwid="cpw-confirm" onclick="togglePwBtn(this)" tabindex="-1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>'
+    +'</div>'
+    +'<div id="cpw-err" class="ferr" style="display:none;margin-bottom:10px"></div>'
+    +'<div style="text-align:center;margin-bottom:12px"><button class="btn btn-ghost btn-sm" onclick="closeChangePw();renderForgotPassword()" style="font-size:12px;color:var(--txt3)">Forgot current password? Reset it instead</button></div>'
+    +'<div class="row" style="gap:8px">'
+    +'<button class="btn btn-ghost flex1" onclick="closeChangePw()">Cancel</button>'
+    +'<button class="btn btn-grad flex1" onclick="submitChangePassword()" id="cpw-btn">Update Password</button>'
+    +'</div>'
+    +'</div>'
+  document.body.appendChild(div)
+  div.addEventListener('click', function(e){ if(e.target===div) closeChangePw() })
+  setTimeout(function(){ var el=document.getElementById('cpw-old'); if(el) el.focus() }, 100)
+}
+
+function closeChangePw(){
+  var el = document.getElementById('changepw-modal')
+  if(el) el.remove()
+}
+
+async function submitChangePassword(){
+  var oldPw = (document.getElementById('cpw-old')||{}).value||''
+  var newPw = (document.getElementById('cpw-new')||{}).value||''
+  var confirmPw = (document.getElementById('cpw-confirm')||{}).value||''
+  var errEl = document.getElementById('cpw-err')
+  var btn = document.getElementById('cpw-btn')
+  errEl.style.display = 'none'
+
+  if(!oldPw||!newPw||!confirmPw){ errEl.textContent='Fill in all fields'; errEl.style.display='block'; return }
+  if(newPw.length < 8){ errEl.textContent='New password must be at least 8 characters'; errEl.style.display='block'; return }
+  if(newPw !== confirmPw){ errEl.textContent='New passwords do not match'; errEl.style.display='block'; return }
+  if(oldPw === newPw){ errEl.textContent='New password must be different from current'; errEl.style.display='block'; return }
+
+  btn.disabled=true; btn.textContent='Updating...'
+  try{
+    await apiFetch('/auth/change-password', {method:'POST', body:JSON.stringify({old_password:oldPw, new_password:newPw})})
+    closeChangePw()
+    toast('Password updated successfully!')
+  }catch(e){
+    errEl.textContent = e.message
+    errEl.style.display = 'block'
+    btn.disabled=false; btn.textContent='Update Password'
+  }
+}
+
 
 async function renderPrivacyPolicy(){
   setContent('<div class="page full" style="max-width:720px">'
@@ -1683,40 +1807,64 @@ async function renderSearch(){
 
 // CATEGORIES PAGE
 async function renderCategories(){
-  setContent('<div style="max-width:960px;margin:0 auto;padding:24px"><div class="loading">Loading categories</div></div>')
+  setContent('<div style="max-width:1000px;margin:0 auto;padding:24px"><div class="loading">Loading communities</div></div>')
   var cats=[]
   try{var r=await GET('/forum/categories');cats=r.categories||[]}catch(e){toast(e.message,'er')}
-  var grid=cats.map(function(c){
+
+  var totalPosts = cats.reduce(function(a,c){return a+(c.thread_count||0)},0)
+  var hero = '<div class="browse-hero">'
+    +'<div class="browse-hero-inner">'
+    +'<div style="font-family:var(--font-d);font-size:2rem;font-weight:800;margin-bottom:8px">Explore Communities</div>'
+    +'<div style="font-size:14px;color:rgba(255,255,255,.75);max-width:420px;line-height:1.6">Find your gaming tribe. Browse communities, discover games, and join the conversation.</div>'
+    +(S.user?'<button class="btn" onclick="goCreateCommunity()" style="margin-top:18px;background:rgba(255,255,255,.15);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.3);color:#fff;font-weight:700"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:6px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Create Community</button>':'')
+    +'</div>'
+    +'<div class="browse-hero-stats">'
+    +'<div class="browse-stat"><div class="browse-stat-num">'+cats.length+'</div><div class="browse-stat-lbl">Communities</div></div>'
+    +'<div class="browse-stat"><div class="browse-stat-num">'+totalPosts.toLocaleString()+'</div><div class="browse-stat-lbl">Posts</div></div>'
+    +'</div>'
+    +'</div>'
+
+  var grid = cats.map(function(c){
     var col=CAT_CLR[c.slug]||c.color||'#a855f7'
-    var postBtn=S.user?'<button class="btn btn-grad btn-xs" data-slug="'+esc(c.slug)+'" onclick="event.stopPropagation();catPostClick(this)">+ Post</button>':''
-    return '<div class="cat-card" data-slug="'+esc(c.slug)+'" onclick="catCardClick(this)">'
-      +'<div class="cat-card-banner" style="background:linear-gradient(135deg,'+col+'44,'+col+'22)">'
-      +(c.cover_url?'<img src="'+esc(c.cover_url)+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.75" loading="lazy"/>':'<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,'+col+'33 0%,transparent 70%)"></div>')
-      +(c.image_url?'<div class="cat-card-icon" style="background:var(--bg1);border:2px solid rgba(255,255,255,.2)"><img src="'+esc(c.image_url)+'" style="width:100%;height:100%;object-fit:cover" loading="lazy"/></div>':(c.cover_url?'':'<div class="cat-card-icon">'+esc(c.icon||'\xf0\x9f\x8e\xae')+'</div>'))+'</div>'
+    var postBtn=S.user?'<button class="btn" style="background:var(--grad2);color:#fff;padding:5px 12px;font-size:11px;font-weight:700;border-radius:99px;flex-shrink:0" data-slug="'+esc(c.slug)+'" onclick="event.stopPropagation();catPostClick(this)">+ Post</button>':''
+    return '<div class="browse-card" data-slug="'+esc(c.slug)+'" onclick="catCardClick(this)">'
+      +'<div class="browse-card-banner" style="background:linear-gradient(135deg,'+col+'55,'+col+'22)">'
+      +(c.cover_url?'<img src="'+esc(c.cover_url)+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.6" loading="lazy"/>':'')
+      +'<div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 30%,rgba(0,0,0,.7))"></div>'
       +'</div>'
-      +'<div class="cat-card-body"><div class="cat-card-name" style="color:'+col+'">'+esc(c.name)+'</div>'
-      +'<div class="cat-card-desc">'+esc(c.description||'A ZiphyNet community')+'</div>'
-      +'<div class="cat-card-footer"><div style="display:flex;align-items:center;gap:4px"><span>📝</span><strong style="color:var(--txt1)">'+(c.thread_count||0)+'</strong> posts</div>'+postBtn+'</div></div></div>'
+      +'<div class="browse-card-icon">'
+      +(c.image_url?'<img src="'+esc(c.image_url)+'" style="width:100%;height:100%;object-fit:cover" loading="lazy"/>':'<span style="font-size:26px">'+esc(c.icon||'🎮')+'</span>')
+      +'</div>'
+      +'<div class="browse-card-body">'
+      +'<div class="browse-card-name" style="color:'+col+'">'+esc(c.name)+'</div>'
+      +'<div class="browse-card-desc">'+esc(c.description||'A ZiphyNet gaming community')+'</div>'
+      +'<div class="browse-card-footer">'
+      +'<div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--txt3)">'
+      +'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>'
+      +'<strong style="color:var(--txt1)">'+(c.thread_count||0).toLocaleString()+'</strong> posts'
+      +'</div>'
+      +postBtn
+      +'</div>'
+      +'</div>'
+      +'</div>'
   }).join('')
-  var adminHint=S.user&&S.user.role==='admin'?'<div class="card" style="padding:16px;margin-top:20px;display:flex;align-items:center;gap:12px"><span style="font-size:20px">⚙</span><div class="flex1"><div style="font-weight:600;font-size:13px">Manage Categories</div><div style="font-size:12px;color:var(--txt3)">Create, edit, reorder and delete categories from the admin panel</div></div><button class="btn btn-grad btn-sm" onclick="goAdminCats()">Open Admin</button></div>':''
-  var createBtn = S.user
-    ? '<div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">'
-      + '<div><div style="font-family:var(--font-d);font-size:1.6rem;font-weight:700">🕹 Communities</div>'
-      + '<div style="color:var(--txt3);font-size:13px;margin-top:2px">Browse or create your own community</div></div>'
-      + '<button class="btn btn-grad" onclick="goCreateCommunity()" style="flex-shrink:0">'
-      + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:6px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Create Community</button>'
-      + '</div>'
-    : '<div style="margin-bottom:16px"><div style="font-family:var(--font-d);font-size:1.6rem;font-weight:700">🕹 Communities</div>'
-      + '<div style="color:var(--txt3);font-size:13px;margin-top:2px">Browse all gaming communities on ZiphyNet</div></div>'
-  var createCard = S.user
-    ? '<div class="cat-card" onclick="goCreateCommunity()" style="border:2px dashed var(--border2);background:transparent;min-height:160px;display:flex;align-items:center;justify-content:center">'
-      + '<div style="text-align:center;padding:16px">'
-      + '<div style="width:48px;height:48px;border-radius:50%;background:var(--grad2);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:22px">🏠</div>'
-      + '<div style="font-weight:700;font-size:14px;color:var(--accent)">+ Create a Community</div>'
-      + '<div style="font-size:11px;color:var(--txt3);margin-top:4px">Up to 3 communities</div>'
-      + '</div></div>'
-    : ''
-  setContent('<div style="max-width:960px;margin:0 auto;padding:24px">'+createBtn+'<div class="cat-grid">'+createCard+grid+'</div>'+adminHint+'</div>')
+
+  var createCard=S.user
+    ?'<div class="browse-card browse-create-card" onclick="goCreateCommunity()">'
+      +'<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:28px;text-align:center;gap:10px">'
+      +'<div style="width:52px;height:52px;border-radius:50%;background:var(--grad2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">+</div>'
+      +'<div style="font-weight:700;font-size:13px;color:var(--accent)">Create a Community</div>'
+      +'<div style="font-size:11px;color:var(--txt3)">Up to 3 communities</div>'
+      +'</div></div>'
+    :''
+  var adminHint=S.user&&S.user.role==='admin'
+    ?'<div class="card" style="padding:16px;margin:20px 24px 0;display:flex;align-items:center;gap:12px"><span style="font-size:20px">⚙</span><div class="flex1"><div style="font-weight:600;font-size:13px">Manage Categories</div><div style="font-size:12px;color:var(--txt3)">Create, edit, reorder and delete from admin panel</div></div><button class="btn btn-grad btn-sm" onclick="goAdminCats()">Open Admin</button></div>'
+    :''
+
+  setContent('<div style="max-width:1000px;margin:0 auto;padding:0 0 40px">'
+    +hero
+    +'<div style="padding:24px 24px 0"><div class="browse-grid">'+createCard+grid+'</div>'
+    +adminHint+'</div></div>')
   initSearch()
 }
 
@@ -1865,7 +2013,7 @@ async function renderMessages(){
   var listHtml = convos.length === 0
     ? '<div style="padding:32px;text-align:center;color:var(--txt3);font-size:13px">No conversations yet<br><br><button class="btn btn-grad btn-sm" onclick="dmNewConvo()">+ New Message</button></div>'
     : convos.map(function(c){
-        var online = c.last_seen && (Date.now()-new Date(c.last_seen+' UTC').getTime()) < 5*60*1000
+        var online = c.last_seen && (Date.now()-new Date(c.last_seen.indexOf('T')>=0?c.last_seen:c.last_seen.replace(' ','T')+'Z').getTime()) < 5*60*1000
         var isActive = !isMobile && preUid ? c.id === preUid : false
         return dmConvoItemHtml(c, online, isActive)
       }).join('')
@@ -2093,7 +2241,7 @@ async function dmSend(){
     var listEl = document.getElementById('dm-list')
     if(listEl && r.conversations){
       listEl.innerHTML = r.conversations.map(function(c){
-        var online = c.last_seen && (Date.now()-new Date(c.last_seen+' UTC').getTime()) < 5*60*1000
+        var online = c.last_seen && (Date.now()-new Date(c.last_seen.indexOf('T')>=0?c.last_seen:c.last_seen.replace(' ','T')+'Z').getTime()) < 5*60*1000
         var isActive = currentDMUser && c.id === currentDMUser.id
         return dmConvoItemHtml(c, online, isActive)
       }).join('')
@@ -3752,6 +3900,7 @@ function blogStartCountdown(links){
 
 restoreFromUrl()
 startNotifPolling()
+if(S.user) loadUserVotes()
 if(S.page==='home') go('home')
 else render()
 // Show community guidelines consent on first visit
