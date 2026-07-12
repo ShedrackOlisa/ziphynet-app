@@ -759,6 +759,11 @@ select.input{appearance:none;cursor:pointer}
   .browse-card-name{font-size:13px}
 }
 
+.share-cat-opt{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:var(--r-lg);cursor:pointer;transition:background .12s}
+.share-cat-opt:hover{background:var(--glass2)}
+.share-cat-opt.selected{background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.3)}
+.share-cat-check{width:20px;height:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+
 /* POST 3-DOT MENU */
 .post-menu-dropdown{position:absolute;right:0;bottom:calc(100% + 4px);background:var(--bg1);border:1px solid var(--border2);border-radius:var(--r-xl);box-shadow:var(--shadow);min-width:190px;z-index:400;display:none;flex-direction:column;overflow:hidden}
 .post-menu-dropdown.show{display:flex}
@@ -1186,7 +1191,11 @@ function sharePostBtn(btn){ sharePost(btn.dataset.tid, btn.dataset.ttitle) }
 function goCategories(){ go('categories') }
 function goCreateCommunity(){ go('create-community') }
 function goForumCat(el){ go('forum',{category:el.dataset.slug}) }
-function closeShareModal(){ var m=document.querySelector('.share-modal'); if(m) m.remove() }
+function closeShareModal(){
+  var m = document.getElementById('share-community-modal') || document.querySelector('.share-modal')
+  if(m) m.remove()
+  _selectedShareCatId = null
+}
 function submitSharePostBtn(btn){ submitSharePost(btn.dataset.tid, btn) }
 function catSaveBtn(){ saveCatSettings(currentEditCatSlug) }
 function catEditCancel(){ var el=document.getElementById('cat-edit-form'); if(el) el.innerHTML='' }
@@ -1275,7 +1284,7 @@ function postRowHtml(t){
     +'<div class="post-title">'+(t.flair?flairHtml(t.flair)+' ':'')+esc(t.title)+'</div>'
     +media
     +'<div class="post-actions">'
-    +'<button class="ivbtn'+(v===1?' liked':'')+'\" data-vid="'+esc(t.id)+'" data-vtype="thread" data-vdir="1" onclick="event.stopPropagation();voteClick(this)" title="Like">'+thumbUp(v===1)+'<span class="ivscore" style="color:'+(v===1?'var(--accent)':'var(--txt2)')+'">'+score+'</span></button>'
+    +ivbarHtml(t.id,score,'thread')
     +'<button class="post-btn" onclick="event.stopPropagation();go(\'thread\',{id:\''+esc(t.id)+'\'})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>'+(t.reply_count||0)+' Comments</button>'
     +'<button class="post-btn" data-tid="'+esc(t.id)+'" onclick="event.stopPropagation();openSocialShare(this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share</button>'
     +'<div style="position:relative"><button class="post-btn" data-tid="'+esc(t.id)+'" onclick="openPostMenu(this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>'+postMenuHtml(t, isSaved)+'</div>'
@@ -2068,7 +2077,32 @@ async function renderProfile(){
     +'</div>'
   var tabContent=''
   if(tab==='posts') tabContent=userThreads.length===0?'<div class="card"><div class="empty" style="padding:32px"><div class="empty-icon">📝</div><p style="font-weight:600">No posts yet</p></div></div>':userThreads.map(postRowHtml).join('')
-  if(tab==='saved'&&isMe) tabContent='<div class="card"><div class="empty" style="padding:32px"><div class="empty-icon">🔖</div><p style="font-weight:600;margin-bottom:6px">'+Object.keys(S.saves).filter(function(k){return S.saves[k]}).length+' saved posts</p><p style="font-size:12px;color:var(--txt3)">Saved posts are stored locally in your browser</p></div></div>'
+  if(tab==='saved'&&isMe){
+    var savedIds = Object.keys(S.saves).filter(function(k){ return S.saves[k] })
+    if(!savedIds.length){
+      tabContent = '<div class="card"><div class="empty" style="padding:40px"><div class="empty-icon">🔖</div><p style="font-weight:600;margin-bottom:6px">No saved posts yet</p><p style="font-size:12px;color:var(--txt3)">Tap Save on any post to bookmark it here</p></div></div>'
+    } else {
+      // Fetch saved posts from API
+      tabContent = '<div class="loading" style="padding:32px">Loading saved posts...</div>'
+      // We'll load them async after render
+      setTimeout(async function(){
+        var savedEl = document.getElementById('saved-posts-tab')
+        if(!savedEl) return
+        var posts = []
+        // Fetch each saved post (in parallel, up to 20)
+        var toFetch = savedIds.slice(0,20)
+        var results = await Promise.allSettled(toFetch.map(function(id){ return GET('/forum/threads/'+id) }))
+        results.forEach(function(r){ if(r.status==='fulfilled' && r.value && r.value.thread) posts.push(r.value.thread) })
+        if(!posts.length){
+          savedEl.innerHTML = '<div class="card"><div class="empty" style="padding:40px"><div class="empty-icon">🔖</div><p>Saved posts not found</p></div></div>'
+        } else {
+          savedEl.innerHTML = '<div>'+posts.map(postRowHtml).join('')+'</div>'
+          initSearch(); fetchLinkPreviews()
+        }
+      }, 50)
+      tabContent = '<div id="saved-posts-tab"><div class="loading" style="padding:32px">Loading saved posts...</div></div>'
+    }
+  }
   if(tab==='about') tabContent='<div class="card" style="padding:24px"><div style="font-size:11px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">Bio</div><div style="color:var(--txt2);font-size:14px;line-height:1.7">'+esc(user.bio||'No bio yet.')+'</div><div class="divider"></div><div style="font-size:12px;color:var(--txt3)">🎂 Joined '+new Date(user.created_at).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})+'</div></div>'
   var sidebar='<div class="sidebar"><div class="scard"><div class="scard-hd" style="color:var(--txt1)">About u/'+esc(username)+'</div>'
     +'<div class="scard-body"><div style="font-size:13px;color:var(--txt2);margin-bottom:16px;line-height:1.6">'+esc(user.bio||'No bio yet.')+'</div>'
@@ -3547,40 +3581,94 @@ async function deleteCommunity(slug){
 
 // Share post to community
 async function sharePost(threadId, threadTitle){
+  if(!S.user){ toast('Sign in to share posts','er'); return }
   var cats=[]
   try{ var r=await GET('/forum/categories'); cats=r.categories||[] }catch(e){}
   if(!cats.length){ toast('No communities available','er'); return }
-  // Show a modal to pick community + optional message
-  var modal = document.createElement('div')
-  modal.className='share-modal'
-modal.style.cssText='position:fixed;inset:0;z-index:700;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:20px'
-  modal.onclick=function(e){ if(e.target===modal) closeShareModal() }
-  var opts = cats.map(function(c){return '<option value="'+esc(c.id)+'">'+esc(c.icon)+' '+esc(c.name)+'</option>'}).join('')
-  modal.innerHTML='<div style="background:var(--bg1);border:1px solid var(--border2);border-radius:var(--r-xl);padding:24px;width:100%;max-width:420px">'
-    +'<div style="font-family:var(--font-d);font-weight:700;font-size:1.1rem;margin-bottom:16px">📤 Share Post</div>'
-    +'<div class="fstack">'
-    +'<div style="font-size:13px;color:var(--txt2);background:var(--glass);border-radius:var(--r);padding:10px 12px">'+esc(threadTitle.slice(0,60))+'</div>'
-    +'<div class="field"><label>Share to community</label><select class="input" id="share-cat">'+opts+'</select></div>'
-    +'<div class="field"><label>Add a message (optional)</label><input class="input" id="share-msg" placeholder="What do you think about this?"/></div>'
-    +'<div id="share-err" class="ferr" style="display:none"></div>'
-    +'<div class="row"><button class="btn btn-ghost" onclick="closeShareModal()">Cancel</button>'
-    +'<button class="btn btn-grad" data-tid="'+esc(threadId)+'" onclick="submitSharePostBtn(this)" style="margin-left:auto">Share</button>'
-    +'</div></div></div>'
-  document.body.appendChild(modal)
+
+  var existing = document.getElementById('share-community-modal')
+  if(existing) existing.remove()
+
+  var opts = cats.map(function(c){
+    return '<div class="share-cat-opt" data-id="'+esc(c.id)+'" onclick="selectShareCat(this)">'
+      +'<span style="font-size:20px">'+esc(c.icon||'🎮')+'</span>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-weight:600;font-size:13px">'+esc(c.name)+'</div>'
+      +'<div style="font-size:11px;color:var(--txt3)">'+(c.thread_count||0)+' posts</div>'
+      +'</div>'
+      +'<div class="share-cat-check" id="chk-'+esc(c.id)+'"></div>'
+      +'</div>'
+  }).join('')
+
+  var div = document.createElement('div')
+  div.id = 'share-community-modal'
+  div.style.cssText = 'position:fixed;inset:0;z-index:700;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:16px'
+  div.onclick = function(e){ if(e.target===div) div.remove() }
+  div.innerHTML = '<div style="background:var(--bg1);border:1px solid var(--border2);border-radius:var(--r-xl);width:100%;max-width:480px;overflow:hidden">'
+    // Header
+    +'<div style="display:flex;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border)">'
+    +'<div style="flex:1;font-family:var(--font-d);font-size:1.1rem;font-weight:700">Share to Community</div>'
+    +'<button onclick="document.getElementById(\'share-community-modal\').remove()" style="background:none;border:none;color:var(--txt3);font-size:20px;cursor:pointer;padding:4px">×</button>'
+    +'</div>'
+    // Post preview (like Facebook shows the link preview)
+    +'<div style="margin:16px 20px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);padding:12px;display:flex;gap:10px;align-items:flex-start">'
+    +'<div style="font-size:24px">📝</div>'
+    +'<div style="flex:1;min-width:0"><div style="font-size:12px;color:var(--txt3);margin-bottom:2px">Original Post</div>'
+    +'<div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(threadTitle)+'</div></div>'
+    +'</div>'
+    // Optional message (like Facebook "Write something...")
+    +'<div style="padding:0 20px 12px">'
+    +'<textarea id="share-msg" class="input" style="min-height:80px;resize:none;font-size:14px" placeholder="Write something about this post... (optional)"></textarea>'
+    +'</div>'
+    // Community picker
+    +'<div style="padding:0 20px;font-size:12px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Choose a community</div>'
+    +'<div style="max-height:200px;overflow-y:auto;padding:0 12px 12px" id="share-cat-list">'+opts+'</div>'
+    +'<div id="share-err" class="ferr" style="display:none;margin:0 20px 12px"></div>'
+    // Footer buttons (like Facebook)
+    +'<div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:10px">'
+    +'<button class="btn btn-ghost flex1" onclick="document.getElementById(\'share-community-modal\').remove()">Cancel</button>'
+    +'<button class="btn btn-grad flex1" id="share-submit-btn" data-tid="'+esc(threadId)+'" onclick="submitSharePostBtn(this)" disabled style="justify-content:center">Share Post</button>'
+    +'</div>'
+    +'</div>'
+
+  document.body.appendChild(div)
+  setTimeout(function(){ var ta=document.getElementById('share-msg'); if(ta) ta.focus() }, 100)
 }
 
+var _selectedShareCatId = null
+function selectShareCat(el){
+  _selectedShareCatId = el.dataset.id
+  document.querySelectorAll('.share-cat-opt').forEach(function(o){
+    o.classList.remove('selected')
+    var chk = o.querySelector('.share-cat-check')
+    if(chk) chk.innerHTML = ''
+  })
+  el.classList.add('selected')
+  var chk = el.querySelector('.share-cat-check')
+  if(chk) chk.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>'
+  var btn = document.getElementById('share-submit-btn')
+  if(btn) btn.disabled = false
+}
+
+
+
 async function submitSharePost(threadId, btn){
-  var catId=(document.getElementById('share-cat')||{}).value
+  var catId = _selectedShareCatId
   var msg=(document.getElementById('share-msg')||{}).value||''
   var errEl=document.getElementById('share-err')
-  if(!catId){ errEl.textContent='Pick a community'; errEl.style.display='block'; return }
-  btn.disabled=true; btn.textContent='Sharing…'
+  if(!catId){ if(errEl){errEl.textContent='Please select a community first';errEl.style.display='block'} return }
+  if(errEl) errEl.style.display='none'
+  btn.disabled=true; btn.textContent='Sharing...'
   try{
     var r=await POST('/threads/share',{thread_id:threadId,category_id:catId,message:msg.trim()})
-    toast('Post shared! 🎉')
-    var modal=document.querySelector('div[style*="z-index:700"]'); if(modal) modal.remove()
+    toast('Post shared!')
+    var modal=document.getElementById('share-community-modal'); if(modal) modal.remove()
+    _selectedShareCatId = null
     go('thread',{id:r.thread_id})
-  }catch(e){ errEl.textContent=e.message; errEl.style.display='block'; btn.disabled=false; btn.textContent='Share' }
+  }catch(e){
+    if(errEl){errEl.textContent=e.message;errEl.style.display='block'}
+    btn.disabled=false; btn.textContent='Share Post'
+  }
 }
 
 
