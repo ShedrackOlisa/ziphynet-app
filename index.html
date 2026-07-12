@@ -167,6 +167,7 @@ input,textarea,select{font-family:inherit;font-size:14px;color:var(--txt1)}
   .post-cat{ font-size:10px; padding:2px 6px }
   .post-actions{ gap:2px; margin-top:8px; flex-wrap:nowrap }
   .post-btn{ padding:3px 6px; font-size:11px; gap:3px }
+  .hide-xs{ display:none }
   .ivbar{ padding:3px 7px; gap:3px }
   .ivbtn{ width:20px; height:20px }
   .ivscore{ font-size:12px }
@@ -268,6 +269,7 @@ input,textarea,select{font-family:inherit;font-size:14px;color:var(--txt1)}
 
 /* ── Very small (≤380px) ── */
 @media(max-width:380px){
+  .hide-xs{ display:none }
   .nav-search{ display:none }
   .nav-search-btn{ display:flex !important }
   .post-btn span{ display:none }
@@ -764,8 +766,14 @@ select.input{appearance:none;cursor:pointer}
 .share-cat-opt.selected{background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.3)}
 .share-cat-check{width:20px;height:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
 
+/* SHARED POST CARD */
+.shared-post-card{border:1px solid var(--border2);border-radius:var(--r-lg);padding:12px;margin-top:10px;background:var(--bg2);cursor:pointer;transition:border-color .15s}
+.shared-post-card:hover{border-color:var(--accent)}
+.shared-post-meta{font-size:11px;color:var(--txt3);margin-bottom:4px}
+.shared-post-title{font-size:13px;font-weight:600;color:var(--txt1);line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+
 /* POST 3-DOT MENU */
-.post-menu-dropdown{position:fixed;background:var(--bg1);border:1px solid var(--border2);border-radius:var(--r-xl);box-shadow:0 8px 32px rgba(0,0,0,.5);min-width:200px;z-index:900;display:none;flex-direction:column;overflow:hidden}
+.post-menu-dropdown{position:fixed;background:var(--bg1);border:1px solid var(--border2);border-radius:var(--r-xl);box-shadow:0 16px 48px rgba(0,0,0,.7);min-width:210px;z-index:9999;display:none;flex-direction:column;overflow:hidden}
 .post-menu-dropdown.show{display:flex}
 .post-menu-item{display:flex;align-items:center;gap:10px;padding:11px 16px;background:none;border:none;color:var(--txt1);font-size:13px;cursor:pointer;text-align:left;font-family:var(--font);transition:background .12s;border-bottom:1px solid var(--border)}
 .post-menu-item:last-child{border-bottom:none}
@@ -1295,6 +1303,15 @@ function copyShareLink(url){
   if(el) el.remove()
 }
 
+function sharedPostCard(t){
+  if(!t.shared_from_id || !t.shared_title) return ''
+  return '<div class="shared-post-card" onclick="event.stopPropagation();go(\'thread\',{id:\''+esc(t.shared_from_id)+'\'})">'
+    +'<div class="shared-post-meta">📤 <strong>u/'+esc(t.shared_username||'?')+'</strong> &nbsp;·&nbsp; Original post</div>'
+    +'<div class="shared-post-title">'+esc(t.shared_title)+'</div>'
+    +(t.shared_media_url?'<img src="'+esc(t.shared_media_url)+'" alt="" style="max-width:100%;max-height:180px;object-fit:cover;border-radius:var(--r);margin-top:8px" loading="lazy"/>':'')
+    +'</div>'
+}
+
 function postRowHtml(t){
   var score=parseInt(t.vote_score)||0, isSaved=S.saves[t.id], catCol=cc(t.category_slug), v=S.votes[t.id]||0
   var media=''
@@ -1308,12 +1325,13 @@ function postRowHtml(t){
     +'<span class="txt-dim">'+ago(t.created_at)+'</span><span class="txt-dim">· 👁 '+(t.views||0)+'</span>'
     +(t.is_pinned?'<span class="tag pinned-tag">📌 Pinned</span>':'')+(t.is_locked?'<span class="tag locked-tag">🔒</span>':'')
     +'</div>'
-    +'<div class="post-title">'+(t.flair?flairHtml(t.flair)+' ':'')+esc(t.title)+'</div>'
+    +(t.shared_from_id && t.title==='Shared a post' ? '' : '<div class="post-title">'+(t.flair?flairHtml(t.flair)+' ':'')+esc(t.title)+'</div>')
     +media
+    +sharedPostCard(t)
     +'<div class="post-actions">'
     +ivbarHtml(t.id,score,'thread')
-    +'<button class="post-btn" onclick="event.stopPropagation();go(\'thread\',{id:\''+esc(t.id)+'\'})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>'+(t.reply_count||0)+' Comments</button>'
-    +'<button class="post-btn" data-tid="'+esc(t.id)+'" onclick="event.stopPropagation();openSocialShare(this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share</button>'
+    +'<button class="post-btn" onclick="event.stopPropagation();go(\'thread\',{id:\''+esc(t.id)+'\'})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>'+(t.reply_count||0)+'<span class="hide-xs"> Comments</span></button>'
+    +'<button class="post-btn" data-tid="'+esc(t.id)+'" onclick="event.stopPropagation();openSocialShare(this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg><span class="hide-xs">Share</span></button>'
     +'<div style="position:relative"><button class="post-btn" data-tid="'+esc(t.id)+'" onclick="openPostMenu(this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>'+postMenuHtml(t, isSaved)+'</div>'
     +'</div></div></div>'
 }
@@ -1791,6 +1809,18 @@ async function renderThread(){
   var thread,replies=[],pagination={}
   try{var r1=await GET('/forum/threads/'+id);thread=r1.thread;currentThreadId=thread.id;var r2=await GET('/forum/threads/'+id+'/replies?page='+rp);replies=r2.replies||[];pagination=r2.pagination||{}}
   catch(e){setContent('<div class="page full"><div class="card"><div class="empty">Post not found.</div></div></div>');return}
+
+  // Count view only once per hour per post using localStorage
+  var viewKey = 'vw_' + id
+  try {
+    var lastView = parseInt(localStorage.getItem(viewKey) || '0')
+    var oneHour = 60 * 60 * 1000
+    if(Date.now() - lastView > oneHour){
+      localStorage.setItem(viewKey, String(Date.now()))
+      apiFetch('/forum/threads/'+id+'/view', {method:'POST'}).catch(function(){})
+      thread.views = (thread.views || 0) + 1
+    }
+  } catch(e) {}
   var score=parseInt(thread.vote_score)||0,col=cc(thread.category_slug)
   var topLevel=replies.filter(function(r){return !r.parent_id})
   var kids={}
