@@ -530,7 +530,7 @@ select.input{appearance:none;cursor:pointer}
 .step-dot.done{background:var(--green)}
 
 /* MOBILE BOTTOM NAV */
-.mobile-bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:300;background:rgba(8,11,20,.95);backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:8px 0 max(8px,env(safe-area-inset-bottom));grid-template-columns:repeat(4,1fr)}
+.mobile-bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:300;background:rgba(8,11,20,.95);backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:8px 0 max(8px,env(safe-area-inset-bottom));grid-template-columns:repeat(5,1fr)}
 .mbn-btn{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 1px;cursor:pointer;color:var(--txt3);transition:color .15s;font-size:9px;font-weight:600;border:none;background:none;font-family:var(--font);white-space:nowrap}
 .mbn-btn:hover,.mbn-btn.active{color:var(--accent)}
 .mbn-btn svg{width:18px;height:18px}
@@ -758,6 +758,22 @@ select.input{appearance:none;cursor:pointer}
   .browse-card-body{padding:8px 12px 12px}
   .browse-card-name{font-size:13px}
 }
+
+/* POST 3-DOT MENU */
+.post-menu-dropdown{position:absolute;right:0;bottom:calc(100% + 4px);background:var(--bg1);border:1px solid var(--border2);border-radius:var(--r-xl);box-shadow:var(--shadow);min-width:190px;z-index:400;display:none;flex-direction:column;overflow:hidden}
+.post-menu-dropdown.show{display:flex}
+.post-menu-item{display:flex;align-items:center;gap:10px;padding:11px 16px;background:none;border:none;color:var(--txt1);font-size:13px;cursor:pointer;text-align:left;font-family:var(--font);transition:background .12s;border-bottom:1px solid var(--border)}
+.post-menu-item:last-child{border-bottom:none}
+.post-menu-item:hover{background:var(--glass2)}
+.post-menu-item.danger{color:#ef4444}
+.post-menu-item.danger:hover{background:rgba(239,68,68,.1)}
+.post-menu-item.saved{color:var(--accent)}
+
+/* SOCIAL SHARE MODAL */
+.social-share-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.social-share-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:12px 6px;border-radius:var(--r-lg);color:#fff;font-size:11px;font-weight:600;text-decoration:none;border:none;cursor:pointer;transition:opacity .15s;min-height:72px}
+.social-share-btn:hover{opacity:.85}
+.social-share-btn svg{width:24px;height:24px}
 
 /* SETTINGS PAGE */
 .settings-row{width:100%;display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:none;border:none;border-bottom:1px solid var(--border);color:var(--txt1);font-size:14px;font-weight:500;cursor:pointer;text-align:left;font-family:var(--font)}
@@ -1150,13 +1166,17 @@ function sidebarHtml(cats){
 }
 
 function goMessages(){ go('messages',{}) }
+function getThreadShareUrl(tid){
+  // Use the OG meta URL for social sharing (crawlers can read it)
+  // Direct hash URL as fallback for copy/internal use
+  return 'https://gamehub-backend.shotavixofficial.workers.dev/og/thread/' + tid
+}
+
 function copyThreadLink(btn){
   var tid = btn.dataset.tid
   var url = window.location.origin + window.location.pathname + '#thread/' + tid
   if(navigator.clipboard){
-    navigator.clipboard.writeText(url).then(function(){ toast('Link copied!') }).catch(function(){
-      prompt('Copy this link:', url)
-    })
+    navigator.clipboard.writeText(url).then(function(){ toast('Link copied!') }).catch(function(){ prompt('Copy this link:', url) })
   } else {
     prompt('Copy this link:', url)
   }
@@ -1178,13 +1198,73 @@ function goAdminCats(){adminTab='categories';go('admin')}
 
 // POST ROW
 
+function postMenuHtml(t, isSaved){
+  var items = ''
+  items += '<button class="post-menu-item" data-tid="'+esc(t.id)+'" onclick="event.stopPropagation();closePostMenu();openSocialShare(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share to Social</button>'
+  if(S.user) items += '<button class="post-menu-item" data-tid="'+esc(t.id)+'" data-ttitle="'+esc(t.title.slice(0,60))+'" onclick="event.stopPropagation();closePostMenu();sharePostBtn(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Share to Community</button>'
+  items += '<button class="post-menu-item" data-tid="'+esc(t.id)+'" onclick="event.stopPropagation();closePostMenu();copyThreadLink(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>Copy Link</button>'
+  if(S.user){
+    var saveLabel = isSaved ? 'Unsave' : 'Save'
+    var saveCls = isSaved ? ' saved' : ''
+    items += '<button class="post-menu-item'+saveCls+'" onclick="event.stopPropagation();closePostMenu();toggleSave(\''+esc(t.id)+'\',this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>'+saveLabel+'</button>'
+  }
+  if(S.user && S.user.username !== t.username)
+    items += '<button class="post-menu-item" data-id="'+esc(t.id)+'" data-type="thread" data-label="'+esc(t.title.slice(0,50))+'" onclick="event.stopPropagation();closePostMenu();openReportModal(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>Report</button>'
+  if(S.user && S.user.username === t.username)
+    items += '<button class="post-menu-item danger" onclick="event.stopPropagation();closePostMenu();delPost(\''+esc(t.id)+'\')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Delete</button>'
+  return '<div class="post-menu-dropdown" id="post-menu-'+esc(t.id)+'">'+items+'</div>'
+}
+
+function openPostMenu(btn){
+  event.stopPropagation()
+  closePostMenu()
+  var menu = document.getElementById('post-menu-'+btn.dataset.tid)
+  if(menu){ menu.classList.add('show'); setTimeout(function(){ document.addEventListener('click', closePostMenu, {once:true}) }, 10) }
+}
+function closePostMenu(){
+  document.querySelectorAll('.post-menu-dropdown.show').forEach(function(m){ m.classList.remove('show') })
+}
+
+function openSocialShare(btn){
+  var tid = btn.dataset.tid
+  // Use OG meta URL for social platforms (bots can crawl it for previews)
+  var shareUrl = getThreadShareUrl(tid)
+  var encodedUrl = encodeURIComponent(shareUrl)
+  var existing = document.getElementById('social-share-overlay')
+  if(existing) existing.remove()
+  var div = document.createElement('div')
+  div.id = 'social-share-overlay'
+  div.className = 'report-modal'
+  div.innerHTML = '<div class="report-modal-box" style="max-width:380px">'
+    +'<div style="font-family:var(--font-d);font-size:1.1rem;font-weight:700;margin-bottom:16px">Share Post</div>'
+    +'<div class="social-share-grid">'
+    +'<a class="social-share-btn" style="background:#25D366" href="https://wa.me/?text='+encodedUrl+'" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>WhatsApp</a>'
+    +'<a class="social-share-btn" style="background:#1877F2" href="https://www.facebook.com/sharer/sharer.php?u='+encodedUrl+'" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>Facebook</a>'
+    +'<a class="social-share-btn" style="background:#000" href="https://x.com/intent/tweet?url='+encodedUrl+'" target="_blank" rel="noopener">X (Twitter)</a>'
+    +'<a class="social-share-btn" style="background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)" href="https://www.instagram.com/" target="_blank" rel="noopener">Instagram</a>'
+    +'<a class="social-share-btn" style="background:#FF0050" href="https://www.tiktok.com/" target="_blank" rel="noopener">TikTok</a>'
+    +'<a class="social-share-btn" style="background:#0A66C2" href="https://www.linkedin.com/sharing/share-offsite/?url='+encodedUrl+'" target="_blank" rel="noopener">LinkedIn</a>'
+    +'<button class="social-share-btn" style="background:var(--bg3);color:var(--txt1)" onclick="copyShareLink(\''+url+'\')">' +'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>Copy Link</button>'
+    +'</div>'
+    +'<button class="btn btn-ghost w-full" style="margin-top:12px;justify-content:center" onclick="document.getElementById(\'social-share-overlay\').remove()">Close</button>'
+    +'</div>'
+  document.body.appendChild(div)
+  div.addEventListener('click', function(e){ if(e.target===div) div.remove() })
+}
+
+function copyShareLink(url){
+  if(navigator.clipboard) navigator.clipboard.writeText(url).then(function(){ toast('Link copied!') })
+  else prompt('Copy this link:', url)
+  var el = document.getElementById('social-share-overlay')
+  if(el) el.remove()
+}
+
 function postRowHtml(t){
-  var score=parseInt(t.vote_score)||0, isSaved=S.saves[t.id], catCol=cc(t.category_slug)
+  var score=parseInt(t.vote_score)||0, isSaved=S.saves[t.id], catCol=cc(t.category_slug), v=S.votes[t.id]||0
   var media=''
-  if(t.media_url&&t.media_type!=='link') media='<div class="post-media post-media-sm" onclick="event.stopPropagation();go(\'thread\',{id:\''+esc(t.id)+'\'})">'+(t.media_type==='video'?'<video src="'+esc(t.media_url)+'" controls style="max-width:100%;max-height:280px"></video>':'<img src="'+esc(t.media_url)+'" alt="" loading="lazy"/>')+'</div>'
+  if(t.media_url&&t.media_type!=='link') media='<div class="post-media post-media-sm" onclick="event.stopPropagation();go(\'thread\',{id:\''+esc(t.id)+'\'})">'+( t.media_type==='video'?'<video src="'+esc(t.media_url)+'" controls style="max-width:100%;max-height:280px"></video>':'<img src="'+esc(t.media_url)+'" alt="" loading="lazy"/>')+'</div>'
   else if(t.media_url&&t.media_type==='link') media=lpCardHtml(t.id,t.media_url)
-  var del=S.user&&S.user.username===t.username?'<button class="post-btn btn-danger" onclick="event.stopPropagation();delPost(\''+esc(t.id)+'\')">🗑 Delete</button>':''
-  return '<div class="post-row'+(t.is_pinned?' pinned':'')+'" onclick="go(\'thread\',{id:\''+esc(t.id)+'\'})">'
+  return '<div class="post-row'+(t.is_pinned?' pinned':'')+'\" onclick="go(\'thread\',{id:\''+esc(t.id)+'\'})\">'
     +'<div class="post-body">'
     +'<div class="post-meta">'
     +'<span class="post-cat" style="color:'+catCol+';background:'+catCol+'18;border:1px solid '+catCol+'30" onclick="event.stopPropagation();go(\'forum\',{category:\''+esc(t.category_slug)+'\'})">'+esc(t.category_name)+'</span>'
@@ -1195,16 +1275,14 @@ function postRowHtml(t){
     +'<div class="post-title">'+(t.flair?flairHtml(t.flair)+' ':'')+esc(t.title)+'</div>'
     +media
     +'<div class="post-actions">'
-    +ivbarHtml(t.id,score,'thread')
+    +'<button class="ivbtn'+(v===1?' liked':'')+'\" data-vid="'+esc(t.id)+'" data-vtype="thread" data-vdir="1" onclick="event.stopPropagation();voteClick(this)" title="Like">'+thumbUp(v===1)+'<span class="ivscore" style="color:'+(v===1?'var(--accent)':'var(--txt2)')+'">'+score+'</span></button>'
     +'<button class="post-btn" onclick="event.stopPropagation();go(\'thread\',{id:\''+esc(t.id)+'\'})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>'+(t.reply_count||0)+' Comments</button>'
-    +'<button class="post-btn" data-tid="'+esc(t.id)+'" onclick="event.stopPropagation();copyThreadLink(this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Copy</button>'
-    +(S.user?'<button class="post-btn" data-tid="'+esc(t.id)+'" data-ttitle="'+esc(t.title.slice(0,60))+'" onclick="event.stopPropagation();sharePostBtn(this)" title="Share to community"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Share</button>':'')
-    +'<button class="post-btn'+(isSaved?' saved':'')+'" onclick="event.stopPropagation();toggleSave(\''+esc(t.id)+'\',this)">🔖 '+(isSaved?'Saved':'Save')+'</button>'
-    +del
-    +(S.user&&S.user.username!==t.username?'<button class="post-btn" data-id="'+esc(t.id)+'" data-type="thread" data-label="'+esc(t.title.slice(0,50))+'" onclick="event.stopPropagation();openReportModal(this)" title="Report post"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Report</button>':'')
+    +'<button class="post-btn" data-tid="'+esc(t.id)+'" onclick="event.stopPropagation();openSocialShare(this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share</button>'
+    +'<div style="position:relative"><button class="post-btn" data-tid="'+esc(t.id)+'" onclick="openPostMenu(this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>'+postMenuHtml(t, isSaved)+'</div>'
     +'</div></div></div>'
 }
 async function delPost(id){if(!confirm('Delete this post?'))return;try{await DEL('/forum/threads/'+id);toast('Deleted');render()}catch(e){toast(e.message,'er')}}
+
 
 // ── REPORT SYSTEM ─────────────────────────────────────────
 var _reportTarget = null
@@ -2185,6 +2263,7 @@ async function dmLoadChat(){
     await dmRefreshChat(true)
     var inp = document.getElementById('dm-input')
     if(inp) inp.focus()
+    dmUpdateOnlineStatus()
     return
   }
   // Desktop: render inside dm-main panel as before
@@ -4011,7 +4090,7 @@ if(S.user){
 }
 setTimeout(checkConsent, 800)
 </script>
-<div class="mobile-bottom-nav" id="mbn" style="grid-template-columns:repeat(6,1fr)">
+<div class="mobile-bottom-nav" id="mbn">
   <button class="mbn-btn" id="mbn-home" onclick="go('home')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
     Home
@@ -4020,14 +4099,15 @@ setTimeout(checkConsent, 800)
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
     Browse
   </button>
-
+  <button class="mbn-btn" id="mbn-post" onclick="go('new-thread')" style="color:#fff">
+    <div style="width:44px;height:44px;border-radius:50%;background:var(--grad2);display:flex;align-items:center;justify-content:center;margin-bottom:2px;box-shadow:0 4px 14px rgba(168,85,247,.5)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:22px;height:22px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </div>
+    Post
+  </button>
   <button class="mbn-btn" id="mbn-blog" onclick="go('blog')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
     Blog
-  </button>
-  <button class="mbn-btn" id="mbn-post" onclick="go('new-thread')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-    Post
   </button>
   <button class="mbn-btn" id="mbn-profile" onclick="mbnProfile()">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
