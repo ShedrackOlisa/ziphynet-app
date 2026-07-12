@@ -773,8 +773,20 @@ select.input{appearance:none;cursor:pointer}
 .shared-post-title{font-size:13px;font-weight:600;color:var(--txt1);line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 
 /* POST 3-DOT MENU */
-.post-menu-dropdown{position:fixed;background:var(--bg1);border:1px solid var(--border2);border-radius:var(--r-xl);box-shadow:0 16px 48px rgba(0,0,0,.7);min-width:210px;z-index:9999;display:none;flex-direction:column;overflow:hidden}
-.post-menu-dropdown.show{display:flex}
+/* POST BOTTOM SHEET (Facebook-style) */
+.post-sheet-overlay{display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.6)}
+.post-sheet-overlay.show{display:block}
+.post-sheet{position:fixed;bottom:0;left:0;right:0;z-index:9999;background:var(--bg1);border-radius:24px 24px 0 0;padding-bottom:max(16px,env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);max-height:85vh;overflow-y:auto}
+.post-sheet.show{transform:translateY(0)}
+.post-sheet-handle{width:36px;height:4px;background:var(--border2);border-radius:99px;margin:12px auto 4px}
+.post-sheet-title{font-size:12px;color:var(--txt3);text-align:center;padding:4px 16px 12px;border-bottom:1px solid var(--border)}
+.post-sheet-item{display:flex;align-items:center;gap:16px;padding:14px 20px;background:none;border:none;color:var(--txt1);font-size:15px;font-weight:500;cursor:pointer;text-align:left;width:100%;font-family:var(--font);transition:background .1s;border-bottom:1px solid var(--border)}
+.post-sheet-item:last-child{border-bottom:none}
+.post-sheet-item:hover,.post-sheet-item:active{background:var(--glass2)}
+.post-sheet-icon{width:40px;height:40px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.post-sheet-item.danger .post-sheet-icon{background:rgba(239,68,68,.15)}
+.post-sheet-item.danger{color:#ef4444}
+.post-sheet-cancel{display:flex;align-items:center;justify-content:center;padding:16px 20px 4px;background:none;border:none;color:var(--accent);font-size:15px;font-weight:700;cursor:pointer;width:100%;font-family:var(--font)}
 .post-menu-item{display:flex;align-items:center;gap:10px;padding:11px 16px;background:none;border:none;color:var(--txt1);font-size:13px;cursor:pointer;text-align:left;font-family:var(--font);transition:background .12s;border-bottom:1px solid var(--border)}
 .post-menu-item:last-child{border-bottom:none}
 .post-menu-item:hover{background:var(--glass2)}
@@ -1215,50 +1227,124 @@ function goAdminCats(){adminTab='categories';go('admin')}
 
 // POST ROW
 
-function postMenuHtml(t, isSaved){
-  var items = ''
-  items += '<button class="post-menu-item" data-tid="'+esc(t.id)+'" onclick="event.stopPropagation();closePostMenu();openSocialShare(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share to Social</button>'
-  if(S.user) items += '<button class="post-menu-item" data-tid="'+esc(t.id)+'" data-ttitle="'+esc(t.title.slice(0,60))+'" onclick="event.stopPropagation();closePostMenu();sharePostBtn(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Share to Community</button>'
-  items += '<button class="post-menu-item" data-tid="'+esc(t.id)+'" onclick="event.stopPropagation();closePostMenu();copyThreadLink(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>Copy Link</button>'
-  if(S.user){
-    var saveLabel = isSaved ? 'Unsave' : 'Save'
-    var saveCls = isSaved ? ' saved' : ''
-    items += '<button class="post-menu-item'+saveCls+'" onclick="event.stopPropagation();closePostMenu();toggleSave(\''+esc(t.id)+'\',this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>'+saveLabel+'</button>'
-  }
-  if(S.user && S.user.username !== t.username)
-    items += '<button class="post-menu-item" data-id="'+esc(t.id)+'" data-type="thread" data-label="'+esc(t.title.slice(0,50))+'" onclick="event.stopPropagation();closePostMenu();openReportModal(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>Report</button>'
-  if(S.user && S.user.username === t.username)
-    items += '<button class="post-menu-item danger" onclick="event.stopPropagation();closePostMenu();delPost(\''+esc(t.id)+'\')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Delete</button>'
-  return '<div class="post-menu-dropdown" id="post-menu-'+esc(t.id)+'" style="display:none">'+items+'</div>'
-}
-
 function openPostMenu(btn){
   event.stopPropagation()
-  closePostMenu()
   var tid = btn.dataset.tid
-  var menu = document.getElementById('post-menu-'+tid)
-  if(!menu) return
-  // Get button position and position the menu above it, keeping within viewport
-  var rect = btn.getBoundingClientRect()
-  var menuW = 210
-  var left = Math.min(rect.right - menuW, window.innerWidth - menuW - 8)
-  left = Math.max(8, left)
-  var top = rect.top - 8 // will adjust after measuring height
-  menu.style.display = 'flex'
-  menu.style.left = left + 'px'
-  menu.style.top = '0px'
-  var menuH = menu.offsetHeight
-  // Open above button if space, below if not
-  if(rect.top > menuH + 20) {
-    menu.style.top = (rect.top - menuH - 4) + 'px'
-  } else {
-    menu.style.top = (rect.bottom + 4) + 'px'
+  // Find the thread data from the DOM context
+  var row = btn.closest('.post-row')
+  var isSaved = row ? S.saves[tid] : false
+  var title = row ? (row.querySelector('.post-title')||{}).textContent||'' : ''
+  var isOwn = row ? (row.querySelector('.post-by')||{}).textContent === ('u/'+(S.user&&S.user.username||'')) : false
+  showPostSheet(tid, title, isSaved, isOwn)
+}
+
+function showPostSheet(tid, title, isSaved, isOwn){
+  // Remove any existing sheet
+  var existing = document.getElementById('post-sheet-wrap')
+  if(existing) existing.remove()
+
+  var wrap = document.createElement('div')
+  wrap.id = 'post-sheet-wrap'
+
+  var overlay = document.createElement('div')
+  overlay.className = 'post-sheet-overlay'
+  overlay.onclick = closePostMenu
+
+  var sheet = document.createElement('div')
+  sheet.className = 'post-sheet'
+  sheet.id = 'post-sheet'
+
+  var items = ''
+
+  // Share to Social
+  items += '<button class="post-sheet-item" data-tid2="'+esc(tid)+'" onclick="var t=this.dataset.tid2;closePostMenu();setTimeout(function(){openSocialShareById(t)},10)">'
+    +'<div class="post-sheet-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></div>'
+    +'<div><div>Share to Social</div><div style="font-size:12px;color:var(--txt3);font-weight:400">WhatsApp, Facebook, X and more</div></div>'
+    +'</button>'
+
+  // Copy Link
+  items += '<button class="post-sheet-item" data-cid="'+esc(tid)+'" onclick="closePostMenu();copyLinkById(this.dataset.cid)">'
+    +'<div class="post-sheet-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg></div>'
+    +'<div>Copy Link</div>'
+    +'</button>'
+
+  // Save / Unsave
+  if(S.user){
+    var saveLabel = isSaved ? 'Unsave Post' : 'Save Post'
+    var saveDesc = isSaved ? 'Remove from your saved items' : 'Add this to your saved items'
+    items += '<button class="post-sheet-item" data-sid="'+esc(tid)+'" onclick="closePostMenu();toggleSave(this.dataset.sid,null)">'
+      +'<div class="post-sheet-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="'+(isSaved?'currentColor':'none')+'" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg></div>'
+      +'<div><div>'+saveLabel+'</div><div style="font-size:12px;color:var(--txt3);font-weight:400">'+saveDesc+'</div></div>'
+      +'</button>'
+      +'<div class="post-sheet-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="'+(isSaved?'currentColor':'none')+'" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg></div>'
   }
-  setTimeout(function(){ document.addEventListener('click', closePostMenu, {once:true}) }, 10)
+
+  // Report (only for other people's posts)
+  if(S.user && !isOwn){
+    items += '<button class="post-sheet-item" data-rid="'+esc(tid)+'" onclick="closePostMenu();openReportById(this.dataset.rid)">'
+      +'<div class="post-sheet-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>'
+      +'<div><div>Report Post</div><div style="font-size:12px;color:var(--txt3);font-weight:400">We won&#39;t tell who reported this</div></div>'
+      +'</button>'
+  }
+
+  // Delete (only own posts)
+  if(S.user && isOwn){
+    items += '<button class="post-sheet-item danger" data-did="'+esc(tid)+'" onclick="closePostMenu();delPost(this.dataset.did)">'
+      +'<div class="post-sheet-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></div>'
+      +'<div>Delete Post</div>'
+      +'</button>'
+  }
+
+  sheet.innerHTML = '<div class="post-sheet-handle"></div>'
+    +'<div class="post-sheet-title">'+esc(title.slice(0,50))+(title.length>50?'...':'')+'</div>'
+    +items
+    +'<button class="post-sheet-cancel" onclick="closePostMenu()">Cancel</button>'
+
+  wrap.appendChild(overlay)
+  wrap.appendChild(sheet)
+  document.body.appendChild(wrap)
+
+  // Animate in
+  requestAnimationFrame(function(){
+    requestAnimationFrame(function(){
+      overlay.classList.add('show')
+      sheet.classList.add('show')
+    })
+  })
+
+  // Swipe down to close
+  var startY = 0
+  sheet.addEventListener('touchstart', function(e){ startY = e.touches[0].clientY }, {passive:true})
+  sheet.addEventListener('touchend', function(e){
+    if(e.changedTouches[0].clientY - startY > 60) closePostMenu()
+  }, {passive:true})
 }
+
 function closePostMenu(){
-  document.querySelectorAll('.post-menu-dropdown').forEach(function(m){ m.style.display = 'none' })
+  var wrap = document.getElementById('post-sheet-wrap')
+  if(!wrap) return
+  var sheet = document.getElementById('post-sheet')
+  var overlay = wrap.querySelector('.post-sheet-overlay')
+  if(sheet) sheet.classList.remove('show')
+  if(overlay) overlay.classList.remove('show')
+  setTimeout(function(){ if(wrap && wrap.parentNode) wrap.remove() }, 280)
 }
+
+function openSocialShareById(tid){
+  var fakeBtn = {dataset:{tid:tid}}
+  openSocialShare(fakeBtn)
+}
+function copyLinkById(tid){
+  var fakeBtn = {dataset:{tid:tid}}
+  copyThreadLink(fakeBtn)
+}
+function openReportById(tid){
+  var fakeBtn = {dataset:{id:tid, type:'thread', label:'post'}}
+  openReportModal(fakeBtn)
+}
+
+// postMenuHtml now returns empty - sheet is rendered dynamically
+function postMenuHtml(t, isSaved){ return '' }
 
 function openSocialShare(btn){
   var tid = btn.dataset.tid
@@ -1332,7 +1418,7 @@ function postRowHtml(t){
     +ivbarHtml(t.id,score,'thread')
     +'<button class="post-btn" onclick="event.stopPropagation();go(\'thread\',{id:\''+esc(t.id)+'\'})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>'+(t.reply_count||0)+'<span class="hide-xs"> Comments</span></button>'
     +'<button class="post-btn" data-tid="'+esc(t.id)+'" onclick="event.stopPropagation();openSocialShare(this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg><span class="hide-xs">Share</span></button>'
-    +'<div style="position:relative"><button class="post-btn" data-tid="'+esc(t.id)+'" onclick="openPostMenu(this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>'+postMenuHtml(t, isSaved)+'</div>'
+    +'<button class="post-btn" data-tid="'+esc(t.id)+'" onclick="openPostMenu(this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>'
     +'</div></div></div>'
 }
 async function delPost(id){if(!confirm('Delete this post?'))return;try{await DEL('/forum/threads/'+id);toast('Deleted');render()}catch(e){toast(e.message,'er')}}
