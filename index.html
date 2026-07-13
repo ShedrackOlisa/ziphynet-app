@@ -2175,7 +2175,7 @@ async function submitPost(){
     catch(e){clearInterval(ticker);errEl.textContent='Upload failed: '+e.message;errEl.style.display='block';btn.disabled=false;btn.textContent='Publish Post';return}
   }
   if(tab==='link'){var lnk=(document.getElementById('nt-link')||{}).value||'';lnk=lnk.trim();if(lnk){media_url=lnk;media_type='link'}}
-  try{var r=await POST('/forum/threads',{title:title,body:body,category_id:category_id,flair:window._flair||null,media_url:media_url,media_type:media_type});window._flair='';window._file=null;window._tab='text';toast('Post published! 🎉');go('thread',{id:r.thread.id})}
+  try{var r=await POST('/forum/threads',{title:title,body:body,category_id:category_id,flair:window._flair||null,media_url:media_url,media_type:media_type});window._flair='';window._file=null;window._tab='text';if(r.pending){toast('Post submitted! Waiting for moderator approval.');go('home')}else{toast('Post published!');go('thread',{id:r.thread.id})}}
   catch(e){errEl.textContent=e.message;errEl.style.display='block';btn.disabled=false;btn.textContent='Publish Post'}
 }
 
@@ -4034,75 +4034,130 @@ async function submitCreateCommunity(){
 async function renderManageCommunity(){
   var slug = S.params.slug
   if(!S.user||!slug){ go('home'); return }
-  var cat={}, members=[], threads=[]
+  var cat={}, members=[], pending=[], threads=[]
   try{
     var r1=await GET('/forum/categories'); var cats=r1.categories||[]; cat=cats.find(function(c){return c.slug===slug})||{}
     var r2=await GET('/communities/'+slug+'/members'); members=r2.members||[]
     var r3=await GET('/forum/threads?category='+slug+'&sort=latest&limit=30'); threads=r3.threads||[]
+    if(cat.requires_approval){
+      try{ var r4=await apiFetch('/communities/'+slug+'/pending'); pending=r4.posts||[] }catch(e){}
+    }
   }catch(e){}
   if(!cat.id){ toast('Community not found','er'); go('home'); return }
+
   var isSiteAdmin = S.user.role==='admin'
-  var isSiteMod = S.user.role==='moderator'
   var isOwner = cat.owner_id===S.user.id || isSiteAdmin
-  // Also check community membership
   var myMembership = members.find(function(m){ return m.user_id===S.user.id })
-  var isCommunityAdmin = myMembership && ['admin','moderator'].includes(myMembership.role)
-  if(!isOwner && !isSiteAdmin && !isSiteMod && !isCommunityAdmin){
-    toast('You do not have permission to manage this community','er')
-    go('forum',{category:slug})
-    return
+  var isCommunityAdmin = myMembership && myMembership.role==='admin'
+  var isCommunityMod = myMembership && ['admin','moderator'].includes(myMembership.role)
+  var isStaff = isOwner || isSiteAdmin || isCommunityAdmin || isCommunityMod
+  if(!isStaff){ toast('You do not have permission to manage this community','er'); go('forum',{category:slug}); return }
+
+  // ── PENDING POSTS ────────────────────────────────────────
+  var pendingHtml = ''
+  if(cat.requires_approval){
+    pendingHtml = '<div class="card" style="overflow:hidden;margin-bottom:16px">'
+      +'<div style="padding:14px 16px;font-weight:700;font-size:13px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">'
+      +'<span>⏳ Pending Approval'+(pending.length?'  <span style="background:#ef4444;color:#fff;border-radius:99px;padding:2px 8px;font-size:11px;margin-left:6px">'+pending.length+'</span>':'')+'</span>'
+      +'</div>'
+      +(pending.length===0?'<div class="empty" style="padding:24px">No posts waiting for approval</div>'
+        :pending.map(function(t){
+          return '<div style="padding:14px 16px;border-bottom:1px solid var(--border)">'
+            +'<div style="display:flex;align-items:flex-start;gap:10px">'
+            +avHtml(t.username,32,t.avatar_url)
+            +'<div style="flex:1;min-width:0">'
+            +'<div style="font-weight:600;font-size:13px;margin-bottom:2px">'+esc(t.title)+'</div>'
+            +'<div style="font-size:11px;color:var(--txt3)">by u/'+esc(t.username)+' · '+ago(t.created_at)+'</div>'
+            +(t.body?'<div style="font-size:12px;color:var(--txt2);margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:400px">'+esc(t.body.slice(0,120))+'</div>':'')
+            +'</div>'
+            +'<div class="row" style="gap:6px;flex-shrink:0">'
+            +'<button class="btn btn-grad btn-sm" style="background:linear-gradient(135deg,#22c55e,#16a34a)" data-slug="'+esc(slug)+'" data-tid="'+esc(t.id)+'" onclick="communityApprovePost(this,\'approve\')">✓ Approve</button>'
+            +'<button class="btn btn-danger btn-sm" data-slug="'+esc(slug)+'" data-tid="'+esc(t.id)+'" onclick="communityApprovePost(this,\'reject\')">✕ Reject</button>'
+            +'</div></div></div>'
+        }).join(''))
+      +'</div>'
   }
 
+  // ── MEMBERS ──────────────────────────────────────────────
+  var staffCount = members.filter(function(m){ return ['admin','moderator'].includes(m.role) }).length
   var membersHtml = members.map(function(m){
-    var isBanned=m.is_banned
+    var isBanned = m.is_banned
+    var isThisOwner = m.user_id===cat.owner_id
+    var mRole = m.role||'member'
+    var roleBadge = isThisOwner?'<span class="role-badge role-admin">owner</span>'
+      :mRole==='admin'?'<span class="role-badge role-admin">admin</span>'
+      :mRole==='moderator'?'<span class="role-badge role-mod">mod</span>':''
+    var canEdit = !isThisOwner && (isOwner || isCommunityAdmin)
+    var makeAdminBtn = canEdit && mRole!=='admin' && staffCount<10
+      ?'<button class="btn btn-outline btn-xs" style="border-color:#a855f7;color:#a855f7" data-slug="'+esc(slug)+'" data-uid="'+esc(m.user_id)+'" data-action="setrole" data-role="admin" onclick="communityMemberAction(this)">Make Admin</button>':''
+    var makeModBtn = canEdit && !['admin','moderator'].includes(mRole) && staffCount<10
+      ?'<button class="btn btn-outline btn-xs" data-slug="'+esc(slug)+'" data-uid="'+esc(m.user_id)+'" data-action="setrole" data-role="moderator" onclick="communityMemberAction(this)">Make Mod</button>':''
+    var removeRoleBtn = canEdit && ['admin','moderator'].includes(mRole)
+      ?'<button class="btn btn-outline btn-xs" data-slug="'+esc(slug)+'" data-uid="'+esc(m.user_id)+'" data-action="setrole" data-role="member" onclick="communityMemberAction(this)">Remove Role</button>':''
+    var banBtn = canEdit
+      ?'<button class="btn btn-xs '+(isBanned?'btn-grad':'btn-danger')+'" data-slug="'+esc(slug)+'" data-uid="'+esc(m.user_id)+'" data-action="'+(isBanned?'unban':'ban')+'" onclick="communityMemberAction(this)">'+(isBanned?'Unban':'Ban')+'</button>':''
     return '<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border)">'
       +avHtml(m.username,36,m.avatar_url)
-      +'<div style="flex:1"><div style="font-weight:600;font-size:13px">u/'+esc(m.username)+'</div>'
-      +'<div style="font-size:11px;color:var(--txt3)">'+esc(m.role)+(isBanned?' · BANNED':'')+'</div></div>'
-      +'<div class="row" style="gap:4px">'
-      +(m.user_id!==cat.owner_id?'<button class="btn btn-outline btn-xs" data-slug="'+esc(slug)+'" data-uid="'+esc(m.user_id)+'" data-action="setrole" data-role="moderator" onclick="communityMemberAction(this)">Make Mod</button>':'')
-      +(m.user_id!==cat.owner_id?'<button class="btn btn-xs '+(isBanned?'btn-grad':'btn-danger')+'" data-slug="'+esc(slug)+'" data-uid="'+esc(m.user_id)+'" data-action="'+(isBanned?'unban':'ban')+'" onclick="communityMemberAction(this)">'+(isBanned?'Unban':'Ban')+'</button>':'')
+      +'<div style="flex:1"><div style="font-weight:600;font-size:13px">u/'+esc(m.username)+' '+roleBadge+'</div>'
+      +'<div style="font-size:11px;color:var(--txt3)">'+ago(m.joined_at)+(isBanned?' · <span style="color:#ef4444">BANNED</span>':'')+'</div></div>'
+      +'<div class="row" style="gap:4px;flex-wrap:wrap;justify-content:flex-end">'+makeAdminBtn+makeModBtn+removeRoleBtn+banBtn+'</div>'
+      +'</div>'
+  }).join('')
+
+  // ── POSTS ────────────────────────────────────────────────
+  var postsHtml = threads.map(function(t){
+    return '<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border)">'
+      +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(t.title)+'</div>'
+      +'<div style="font-size:11px;color:var(--txt3)">by u/'+esc(t.username)+' · '+ago(t.created_at)+(t.is_pinned?' · 📌 Pinned':'')+'</div></div>'
+      +'<div class="row" style="gap:4px;flex-shrink:0">'
+      +'<button class="btn btn-outline btn-xs" data-slug="'+esc(slug)+'" data-tid="'+esc(t.id)+'" data-pinned="'+(t.is_pinned?1:0)+'" onclick="communityPinPost(this)">'+(t.is_pinned?'Unpin':'Pin')+'</button>'
+      +'<button class="btn btn-danger btn-xs" data-slug="'+esc(slug)+'" data-tid="'+esc(t.id)+'" onclick="communityDeletePost(this)">Delete</button>'
       +'</div></div>'
   }).join('')
 
+  // ── SETTINGS ─────────────────────────────────────────────
   setContent('<div class="page full" style="max-width:900px">'
     +'<div style="margin-bottom:20px;display:flex;align-items:center;gap:12px">'
-    +'<button class="btn btn-ghost btn-sm" data-slug="'+esc(slug)+'" onclick="goForumCat(this)">← Back</button>'
-    +'<div style="font-family:var(--font-d);font-size:1.3rem;font-weight:700">⚙ Manage: '+esc(cat.name)+'</div>'
+    +'<button class="btn btn-ghost btn-sm" data-slug="'+esc(slug)+'" onclick="goForumCat(this)">Back</button>'
+    +'<div style="font-family:var(--font-d);font-size:1.3rem;font-weight:700"> Manage: '+esc(cat.name)+'</div>'
     +'</div>'
     +'<div class="fstack">'
-    +'<div class="card" style="padding:20px"><h3 style="font-family:var(--font-d);font-weight:700;margin-bottom:16px">Community Settings</h3>'
-    +'<div class="fstack">'
-    +'<div class="field"><label>Name</label><input class="input" id="mc-name" value="'+esc(cat.name)+'"/></div>'
-    +'<div class="field"><label>Description</label><textarea class="input" id="mc-desc" style="min-height:70px">'+esc(cat.description||'')+'</textarea></div>'
-    +'<div class="field"><label>Icon</label><input class="input" id="mc-icon" value="'+esc(cat.icon||'🎮')+'" style="max-width:80px;text-align:center"/></div>'
-    +'<div class="row wrap" style="gap:8px">'
-    +'<button class="btn btn-grad btn-sm" data-slug="'+esc(slug)+'" onclick="saveManagedCommunity(this.dataset.slug)">Save Settings</button>'
-    +'<button class="btn btn-outline btn-sm" data-slug="'+esc(slug)+'" onclick="catUploadAvatar(this.dataset.slug)">🖼 Change Picture</button>'
-    +'<button class="btn btn-outline btn-sm" data-slug="'+esc(slug)+'" onclick="catUploadCover(this.dataset.slug)">🌄 Change Cover</button>'
-    +(isOwner?'<button class="btn btn-danger btn-sm" data-slug="'+esc(slug)+'" onclick="deleteCommunity(this.dataset.slug)">🗑 Delete</button>':'')
-    +'</div>'
-    +'</div></div>'
+    // Settings card
+    +(isOwner||isCommunityAdmin?'<div class="card" style="padding:20px"><div style="font-family:var(--font-d);font-weight:700;font-size:15px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)">Community Settings</div>'
+      +'<div class="fstack">'
+      +'<div class="field"><label>Name</label><input class="input" id="mc-name" value="'+esc(cat.name)+'"/></div>'
+      +'<div class="field"><label>Description</label><textarea class="input" id="mc-desc" style="min-height:70px">'+esc(cat.description||'')+'</textarea></div>'
+      +'<div class="field"><label>Icon</label><input class="input" id="mc-icon" value="'+esc(cat.icon||'🎮')+'" style="max-width:80px;text-align:center"/></div>'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg2);border-radius:var(--r-lg)">'
+      +'<div><div style="font-weight:600;font-size:13px">Require Post Approval</div><div style="font-size:12px;color:var(--txt3);margin-top:2px">New posts need approval from admins or moderators before they appear publicly</div></div>'
+      +'<input type="checkbox" id="mc-approval" '+(cat.requires_approval?'checked':'')+' style="width:20px;height:20px;accent-color:var(--accent);cursor:pointer"/>'
+      +'</div>'
+      +'<div class="row wrap" style="gap:8px">'
+      +'<button class="btn btn-grad btn-sm" data-slug="'+esc(slug)+'" onclick="saveManagedCommunity(this.dataset.slug)">Save Settings</button>'
+      +'<button class="btn btn-outline btn-sm" data-slug="'+esc(slug)+'" onclick="catUploadAvatar(this.dataset.slug)"> Change Picture</button>'
+      +'<button class="btn btn-outline btn-sm" data-slug="'+esc(slug)+'" onclick="catUploadCover(this.dataset.slug)"> Change Cover</button>'
+      +(isOwner?'<button class="btn btn-danger btn-sm" data-slug="'+esc(slug)+'" onclick="deleteCommunity(this.dataset.slug)"> Delete</button>':'')
+      +'</div>'
+      +'</div></div>':'')
+    // Pending approval queue
+    +pendingHtml
+    // Members card
     +'<div class="card" style="overflow:hidden">'
-    +'<div style="padding:14px 16px;font-weight:700;border-bottom:1px solid var(--border)">👥 Members ('+members.length+')</div>'
+    +'<div style="padding:14px 16px;font-weight:700;font-size:13px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">'
+    +'<span> Members ('+members.length+')</span>'
+    +'<span style="font-size:11px;color:var(--txt3)">'+staffCount+'/10 staff slots used</span>'
+    +'</div>'
     +'<div style="max-height:400px;overflow-y:auto">'+membersHtml+'</div>'
     +'</div>'
+    // Posts card
     +'<div class="card" style="overflow:hidden">'
-    +'<div style="padding:14px 16px;font-weight:700;border-bottom:1px solid var(--border)">📝 Posts ('+threads.length+')</div>'
-    +'<div style="max-height:400px;overflow-y:auto">'
-    +threads.map(function(t){
-      return '<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border)">'
-        +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(t.title)+'</div>'
-        +'<div style="font-size:11px;color:var(--txt3)">by u/'+esc(t.username)+' · '+ago(t.created_at)+'</div></div>'
-        +'<div class="row" style="gap:4px;flex-shrink:0">'
-        +'<button class="btn btn-outline btn-xs" data-slug="'+esc(slug)+'" data-tid="'+esc(t.id)+'" data-pinned="'+(t.is_pinned?1:0)+'" onclick="communityPinPost(this)">'+(t.is_pinned?'Unpin':'Pin')+'</button>'
-        +'<button class="btn btn-danger btn-xs" data-slug="'+esc(slug)+'" data-tid="'+esc(t.id)+'" onclick="communityDeletePost(this)">Delete</button>'
-        +'</div></div>'
-    }).join('')
-    +'</div></div>'
+    +'<div style="padding:14px 16px;font-weight:700;font-size:13px;border-bottom:1px solid var(--border)"> Posts ('+threads.length+')</div>'
+    +'<div style="max-height:400px;overflow-y:auto">'+postsHtml+'</div>'
+    +'</div>'
     +'</div></div>')
   initSearch()
 }
+
 
 async function communityPinPost(btn){
   var slug=btn.dataset.slug, tid=btn.dataset.tid, pinned=parseInt(btn.dataset.pinned)
@@ -4121,14 +4176,27 @@ async function communityDeletePost(btn){
     renderManageCommunity()
   }catch(e){ toast(e.message,'er') }
 }
+async function communityApprovePost(btn, action){
+  var slug=btn.dataset.slug, tid=btn.dataset.tid
+  btn.disabled=true
+  try{
+    await apiFetch('/communities/'+slug+'/approve',{method:'POST',body:JSON.stringify({thread_id:tid,action:action})})
+    toast(action==='approve'?'Post approved and published!':'Post rejected')
+    renderManageCommunity()
+  }catch(e){ toast(e.message,'er'); btn.disabled=false }
+}
+
 async function saveManagedCommunity(slug){
   var name=(document.getElementById('mc-name')||{}).value||''
   var desc=(document.getElementById('mc-desc')||{}).value||''
   var icon=(document.getElementById('mc-icon')||{}).value||''
+  var approval=document.getElementById('mc-approval')
+  var requires_approval=approval?approval.checked:false
   if(!name.trim()){ toast('Name required','er'); return }
   try{
-    await apiFetch('/communities/'+slug,{method:'PATCH',body:JSON.stringify({name:name.trim(),description:desc.trim(),icon:icon||'🎮'})})
-    toast('Community updated!'); go('forum',{category:slug})
+    await apiFetch('/communities/'+slug,{method:'PATCH',body:JSON.stringify({name:name.trim(),description:desc.trim(),icon:icon||'🎮',requires_approval:requires_approval})})
+    toast('Community updated!')
+    renderManageCommunity()
   }catch(e){ toast(e.message,'er') }
 }
 
