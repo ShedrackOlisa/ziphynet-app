@@ -216,19 +216,83 @@ input,textarea,select{font-family:inherit;font-size:14px;color:var(--txt1)}
   .code-inputs{ gap:6px }
   .code-input{ width:40px; height:48px; font-size:18px }
 
-  /* ADMIN */
-  .admin-wrap{ padding:10px }
-  .admin-tabs{ overflow-x:auto; flex-wrap:nowrap; gap:0; padding:4px }
-  .admin-tab{ padding:6px 10px; font-size:11px; white-space:nowrap }
-  .stat-grid{ grid-template-columns:1fr 1fr; gap:8px }
-  .stat-card{ padding:12px }
-  .stat-card-num{ font-size:1.4rem }
-  /* Stack admin dashboard grid */
-  .admin-wrap > div > div[style*="grid-template-columns:1fr 1fr"]{ 
-    display:flex; flex-direction:column; gap:12px 
+  /* ── ADMIN MOBILE REDESIGN ── */
+  .admin-wrap{ padding:0 0 80px }
+
+  /* Tab bar: horizontal scrollable pill row */
+  .admin-tabs{
+    overflow-x:auto; flex-wrap:nowrap; gap:6px; padding:12px;
+    -webkit-overflow-scrolling:touch; scrollbar-width:none;
+    background:var(--bg1); border-bottom:1px solid var(--border);
+    border-radius:0; margin-bottom:0; border:none;
+    position:sticky; top:var(--nav-h); z-index:100;
   }
+  .admin-tabs::-webkit-scrollbar{ display:none }
+  .admin-tab{
+    padding:7px 14px; font-size:12px; white-space:nowrap;
+    border-radius:99px; flex-shrink:0;
+  }
+  .admin-tab.active{
+    background:var(--accent); color:#fff;
+  }
+
+  /* Stat cards: 2-col compact grid */
+  .stat-grid{
+    grid-template-columns:1fr 1fr; gap:8px;
+    padding:12px; margin-bottom:0;
+  }
+  .stat-card{
+    padding:14px 12px; border-radius:var(--r-lg);
+    text-align:left; display:flex; flex-direction:column; gap:4px;
+  }
+  .stat-card-num{ font-size:1.5rem; font-weight:800; line-height:1 }
+  .stat-card-lbl{ font-size:10px; text-transform:uppercase; letter-spacing:.04em; color:var(--txt3) }
+
+  /* Content area: full width, no side padding */
+  .admin-wrap .card{ border-radius:0; border-left:none; border-right:none; margin-bottom:2px }
+  .admin-wrap .fstack{ padding:0 }
+
+  /* Tables: mobile friendly */
+  .admin-table{ font-size:11px }
+  .admin-table th,.admin-table td{ padding:8px; white-space:nowrap }
   .admin-table{ display:block; overflow-x:auto; -webkit-overflow-scrolling:touch }
-  .reorder-item{ padding:10px }
+  .action-row{ flex-direction:column; gap:3px; align-items:flex-start }
+  .action-row .btn-xs{ font-size:10px; padding:3px 8px }
+
+  /* Dashboard 2-col grids → single col */
+  .admin-wrap div[style*="grid-template-columns:1fr 1fr"],
+  .admin-wrap div[style*="grid-template-columns:repeat(2"],
+  .admin-wrap div[style*="grid-template-columns:1fr 1fr"]{
+    display:flex !important; flex-direction:column !important; gap:2px !important; margin:0 !important;
+  }
+
+  /* Analytics bars chart */
+  .admin-wrap div[style*="height:110px"]{ padding:0 12px }
+
+  /* Settings grid → single col */
+  .admin-wrap div[style*="grid-template-columns:1fr 1fr"]{
+    grid-template-columns:1fr !important;
+  }
+
+  /* Blog tabs grid */
+  .admin-wrap div[style*="grid-template-columns:repeat(3"]{
+    grid-template-columns:1fr !important;
+    gap:8px !important;
+  }
+
+  /* Cards inside admin: full bleed */
+  .admin-wrap > div > .card{ border-radius:var(--r-lg); margin:0 10px 10px }
+  .reorder-item{ padding:10px 12px }
+
+  /* Moderator panel */
+  .admin-wrap .stat-grid[style*="repeat(3"]{
+    grid-template-columns:repeat(3,1fr) !important;
+  }
+
+  /* Pending approval posts */
+  .admin-wrap div[style*="flex:1;min-width:0"] + div.row{
+    flex-direction:column;
+  }
 
   /* CATEGORIES */
   .cat-grid{ grid-template-columns:1fr; gap:10px }
@@ -3445,23 +3509,80 @@ async function resolveReport(btn, status){
 
 async function buildAdminDashboard(){
   var r=await apiFetch('/admin/stats'), s=r.stats
-  var html='<div class="stat-grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">'
-    +'<div class="stat-card" style="border-top:3px solid var(--accent)"><div class="stat-card-num">'+s.users+'</div><div class="stat-card-lbl">Total Users</div></div>'
-    +'<div class="stat-card" style="border-top:3px solid #22c55e"><div class="stat-card-num" style="color:#22c55e">'+s.onlineNow+'</div><div class="stat-card-lbl">Online Now</div></div>'
-    +'<div class="stat-card"><div class="stat-card-num">'+s.threads+'</div><div class="stat-card-lbl">Total Posts</div></div>'
-    +'<div class="stat-card"><div class="stat-card-num">'+s.replies+'</div><div class="stat-card-lbl">Comments</div></div>'
-    +'<div class="stat-card"><div class="stat-card-num">'+s.votes+'</div><div class="stat-card-lbl">Votes Cast</div></div>'
-    +'<div class="stat-card"><div class="stat-card-num">'+s.messages+'</div><div class="stat-card-lbl">DMs Sent</div></div>'
-    +(s.pendingReports>0?'<div class="stat-card" style="border-top:3px solid #ef4444"><div class="stat-card-num" style="color:#ef4444">'+s.pendingReports+'</div><div class="stat-card-lbl">Reports Pending</div></div>':'')
+
+  // stat card helper with icon
+  function sc(icon, num, lbl, color, onclick){
+    var clickAttr = onclick ? ' style="cursor:pointer;border-top:3px solid '+(color||'var(--border)')+'" onclick="'+onclick+'"' : ' style="border-top:3px solid '+(color||'var(--border)')+'"'
+    return '<div class="stat-card"'+clickAttr+'>'
+      +'<div style="font-size:22px;margin-bottom:4px">'+icon+'</div>'
+      +'<div class="stat-card-num" style="color:'+(color||'var(--txt1)')+'">'+num+'</div>'
+      +'<div class="stat-card-lbl">'+lbl+'</div>'
+      +'</div>'
+  }
+
+  var html='<div style="padding:12px 12px 0">'
+    +'<div style="font-family:var(--font-d);font-size:1.2rem;font-weight:700;margin-bottom:12px">Overview</div>'
     +'</div>'
-  html+='<div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-top:4px">'
-    +'<div class="stat-card"><div style="font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">New Users</div><div style="display:flex;justify-content:space-between"><div><div style="font-size:11px;color:var(--txt3)">Today</div><div style="font-size:1.2rem;font-weight:700">'+s.usersToday+'</div></div><div><div style="font-size:11px;color:var(--txt3)">Week</div><div style="font-size:1.2rem;font-weight:700">'+s.usersWeek+'</div></div><div><div style="font-size:11px;color:var(--txt3)">Month</div><div style="font-size:1.2rem;font-weight:700">'+s.usersMonth+'</div></div></div></div>'
-    +'<div class="stat-card"><div style="font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">New Posts</div><div style="display:flex;justify-content:space-between"><div><div style="font-size:11px;color:var(--txt3)">Today</div><div style="font-size:1.2rem;font-weight:700">'+s.threadsToday+'</div></div><div><div style="font-size:11px;color:var(--txt3)">Week</div><div style="font-size:1.2rem;font-weight:700">'+s.threadsWeek+'</div></div></div></div>'
-    +'<div class="stat-card" style="cursor:pointer" onclick="switchAdminTab(\'reports\')"><div style="font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Reports</div><div style="font-size:1.5rem;font-weight:700;color:'+(s.pendingReports>0?'#ef4444':'#22c55e')+'">'+s.pendingReports+'</div><div style="font-size:12px;color:var(--txt3)">pending</div></div>'
+
+  // Main stats grid
+  html+='<div class="stat-grid" style="grid-template-columns:repeat(auto-fill,minmax(130px,1fr));padding:0 12px;gap:10px;margin-bottom:12px">'
+    +sc('👥', s.users, 'Total Users', 'var(--accent)')
+    +sc('🟢', s.onlineNow, 'Online Now', '#22c55e')
+    +sc('📝', s.threads, 'Total Posts', 'var(--txt1)')
+    +sc('💬', s.replies, 'Comments', 'var(--txt1)')
+    +sc('👍', s.votes, 'Votes', 'var(--txt1)')
+    +sc('✉️', s.messages, 'DMs', 'var(--txt1)')
+    +(s.pendingReports>0?sc('🚨', s.pendingReports, 'Reports', '#ef4444', "switchAdminTab('reports')"):'')
     +'</div>'
-  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:4px">'
-  html+='<div class="card" style="overflow:hidden"><div style="padding:14px 16px;font-weight:700;font-size:13px;border-bottom:1px solid var(--border)">New Users</div><table class="admin-table"><thead><tr><th>User</th><th>Role</th><th>Joined</th></tr></thead><tbody>'+r.recentUsers.map(function(u){var rc=u.role==='admin'?'role-admin':u.role==='moderator'?'role-mod':'role-member';return '<tr><td><strong>u/'+esc(u.username)+'</strong><br><span style="font-size:11px;color:var(--txt3)">'+esc(u.email)+'</span></td><td><span class="role-badge '+rc+'">'+esc(u.role)+'</span></td><td>'+ago(u.created_at)+'</td></tr>'}).join('')+'</tbody></table></div>'
-  html+='<div class="card" style="overflow:hidden"><div style="padding:14px 16px;font-weight:700;font-size:13px;border-bottom:1px solid var(--border)">Top Posts by Views</div><table class="admin-table"><thead><tr><th>Title</th><th>By</th><th>Views</th></tr></thead><tbody>'+r.topPosts.map(function(t){return '<tr class="clickable" data-tid="'+esc(t.id)+'" onclick="adminGoThread(this)" style="cursor:pointer"><td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(t.title)+'</td><td>u/'+esc(t.username)+'</td><td>'+String(t.views||0)+'</td></tr>'}).join('')+'</tbody></table></div></div>'
+
+  // Growth strip
+  html+='<div class="card" style="margin:0 12px 12px;padding:16px;border-radius:var(--r-xl)">'
+    +'<div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--txt3);font-weight:700;margin-bottom:12px">Growth This Period</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center">'
+    +'<div><div style="font-size:10px;color:var(--txt3)">Users Today</div><div style="font-size:1.3rem;font-weight:800;color:var(--accent)">'+s.usersToday+'</div></div>'
+    +'<div><div style="font-size:10px;color:var(--txt3)">This Week</div><div style="font-size:1.3rem;font-weight:800">'+s.usersWeek+'</div></div>'
+    +'<div><div style="font-size:10px;color:var(--txt3)">This Month</div><div style="font-size:1.3rem;font-weight:800">'+s.usersMonth+'</div></div>'
+    +'</div>'
+    +'<div style="height:1px;background:var(--border);margin:12px 0"></div>'
+    +'<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;text-align:center">'
+    +'<div><div style="font-size:10px;color:var(--txt3)">Posts Today</div><div style="font-size:1.3rem;font-weight:800;color:#22c55e">'+s.threadsToday+'</div></div>'
+    +'<div><div style="font-size:10px;color:var(--txt3)">Posts This Week</div><div style="font-size:1.3rem;font-weight:800">'+s.threadsWeek+'</div></div>'
+    +'</div>'
+    +'</div>'
+
+  // Recent users card
+  html+='<div class="card" style="margin:0 12px 12px;overflow:hidden;border-radius:var(--r-xl)">'
+    +'<div style="padding:14px 16px;font-weight:700;font-size:13px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">'
+    +'<span>🆕 Recent Users</span>'
+    +'<button class="btn btn-ghost btn-xs" onclick="switchAdminTab(\'users\')">See all</button>'
+    +'</div>'
+    +r.recentUsers.map(function(u){
+      var rc=u.role==='admin'?'role-admin':u.role==='moderator'?'role-mod':'role-member'
+      return '<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border)">'
+        +avHtml(u.username,34,null)
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">u/'+esc(u.username)+'</div>'
+        +'<div style="font-size:11px;color:var(--txt3)">'+ago(u.created_at)+'</div>'
+        +'</div>'
+        +'<span class="role-badge '+rc+'">'+esc(u.role)+'</span>'
+        +'</div>'
+    }).join('')
+    +'</div>'
+
+  // Top posts card
+  html+='<div class="card" style="margin:0 12px 12px;overflow:hidden;border-radius:var(--r-xl)">'
+    +'<div style="padding:14px 16px;font-weight:700;font-size:13px;border-bottom:1px solid var(--border)">🔥 Top Posts by Views</div>'
+    +r.topPosts.map(function(t){
+      return '<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);cursor:pointer" data-tid="'+esc(t.id)+'" onclick="adminGoThread(this)">'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(t.title)+'</div>'
+        +'<div style="font-size:11px;color:var(--txt3)">u/'+esc(t.username)+'</div>'
+        +'</div>'
+        +'<div style="font-size:12px;font-weight:700;color:var(--txt3);flex-shrink:0">'+String(t.views||0)+' views</div>'
+        +'</div>'
+    }).join('')
+    +'</div>'
+
   return html
 }
 
