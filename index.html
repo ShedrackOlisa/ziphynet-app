@@ -540,6 +540,11 @@ select.input{appearance:none;cursor:pointer}
   .mobile-bottom-nav{display:grid}
   body{padding-bottom:65px}
   .toast-wrap{bottom:80px}
+  /* Shrink isMod action buttons in community header on mobile */
+  .c-hero .btn-outline.btn-sm, .c-hero .btn-grad.btn-sm{
+    padding:4px 8px;font-size:10px;
+  }
+  .c-hero .row{gap:4px;flex-wrap:wrap}
 }
 
 /* CHAT MEDIA */
@@ -1356,7 +1361,17 @@ function catEditCancel(){ var el=document.getElementById('cat-edit-form'); if(el
 function showCatEditFormBtn(el){ showCatEditForm({slug:el.dataset.slug, name:el.dataset.name, description:el.dataset.desc}) }
 function msgUserBtn(el){ openMsgWith(el.dataset.uid, el.dataset.uname, el.dataset.avatar) }
 function catCardClick(el){go('forum',{category:el.dataset.slug})}
-function catPostClick(el){go('new-thread',{category:el.dataset.slug})}
+function catPostClick(el){
+  var slug = el.dataset.slug
+  if(S.user && slug && !isJoined(slug) && S.user.role!=='admin'){
+    // Show join prompt before posting
+    if(confirm('You need to join this community before posting.\nJoin now?')){
+      joinCommunity(slug, null).then(function(){ go('new-thread',{category:slug}) })
+    }
+    return
+  }
+  go('new-thread',{category:slug})
+}
 function goAdminCats(){adminTab='categories';go('admin')}
 
 // POST ROW
@@ -2011,7 +2026,7 @@ async function renderForum(){
   var isSiteAdmin = S.user && ['admin','moderator'].includes(S.user.role)
   var isCommunityOwner = S.user && activeCat && activeCat.owner_id === S.user.id
   var isCommunityMod = false
-  if(S.user && activeCat && activeCat.is_user_community && !isSiteAdmin && !isCommunityOwner){
+  if(S.user && activeCat && !isSiteAdmin && !isCommunityOwner){
     try{
       var memR = await GET('/communities/'+cat+'/members')
       var myMembership = (memR.members||[]).find(function(m){ return m.user_id===S.user.id })
@@ -2020,7 +2035,7 @@ async function renderForum(){
   }
   var isMod = isSiteAdmin || isCommunityOwner || isCommunityMod
   var heroHtml=activeCat
-    ?'<div class="c-hero mb2" style="border-radius:var(--r-xl);overflow:hidden;background:var(--bg1);border:1px solid var(--border)">'    +'<div class="cat-cover" style="background:linear-gradient(135deg,'+col+'44,'+col+'22)">'    +(activeCat.cover_url?'<img src="'+esc(activeCat.cover_url)+'" alt="cover" style="width:100%;height:100%;object-fit:cover"/>':'')    +(isMod?'<div class="cat-cover-edit" onclick="catUploadCover(\''+esc(cat)+'\')" style="right:10px;bottom:10px">📷 Edit Cover</div>':'')    +'</div>'    +'<div style="padding:16px 20px 18px">'    +'<div style="display:flex;align-items:flex-start;gap:14px">'    +'<div style="flex-shrink:0;position:relative">'    +(activeCat.image_url      ?'<div style="width:64px;height:64px;border-radius:12px;border:3px solid var(--bg1);overflow:hidden;cursor:zoom-in;box-shadow:var(--shadow)" data-src="'+esc(activeCat.image_url)+'" onclick="openLightbox(this.dataset.src)"><img src="'+esc(activeCat.image_url)+'" style="width:100%;height:100%;object-fit:cover"/></div>'      :'<div style="width:64px;height:64px;border-radius:12px;border:3px solid var(--bg1);background:linear-gradient(135deg,'+col+'66,'+col+'33);display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:var(--shadow)">'+esc(activeCat.icon||'🎮')+'</div>')    +(isMod?'<div onclick="catUploadAvatar(\''+esc(cat)+'\')"><div style="position:absolute;bottom:-4px;right:-4px;width:20px;height:20px;background:var(--grad2);color:#fff;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer">✎</div></div>':'')    +'</div>'    +'<div style="flex:1;min-width:0">'    +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:4px">'    +'<div id="cat-name-display" style="font-family:var(--font-d);font-size:1.3rem;font-weight:700">'+esc(activeCat.name)+'</div>'    +(isMod?'<div class="row" style="gap:6px"><button class="btn btn-outline btn-sm" data-slug="'+esc(cat)+'" data-name="'+esc(activeCat.name)+'" data-desc="'+esc(activeCat.description||'')+'" onclick="showCatEditFormBtn(this)">✎ Edit</button>'+(activeCat.is_user_community?'<button class="btn btn-outline btn-sm" onclick="go(\'manage-community\',{slug:\''+esc(cat)+'\'})">⚙ Manage</button>':'')+'</div>':'')    +'</div>'    +'<div id="cat-desc-display" style="color:var(--txt2);font-size:13px;margin-bottom:10px">'+esc(activeCat.description||'No description yet.')+'</div>'    +'<div class="row wrap" style="gap:8px">'+'<div class="stat-pill"><div class="stat-num">'+(activeCat.thread_count||0)+'</div><div class="stat-lbl">Posts</div></div>'+'<div class="stat-pill"><div class="stat-num">'+(activeCat.member_count||0)+'</div><div class="stat-lbl">Members</div></div>'+(activeCat.weekly_posts?'<div class="stat-pill" style="color:var(--green)"><div class="stat-num" style="color:var(--green)">+'+activeCat.weekly_posts+'</div><div class="stat-lbl">This Week</div></div>':'')+(S.user?joinBtnHtml(cat,'sm'):'')    +(S.user?'<button class="btn btn-grad btn-sm" data-slug="'+esc(cat)+'" onclick="catPostClick(this)">+ Create Post</button>':'')    +'</div></div></div></div></div>'    +'<div id="cat-edit-form"></div>'    :''
+    ?'<div class="c-hero mb2" style="border-radius:var(--r-xl);overflow:hidden;background:var(--bg1);border:1px solid var(--border)">'    +'<div class="cat-cover" style="background:linear-gradient(135deg,'+col+'44,'+col+'22)">'    +(activeCat.cover_url?'<img src="'+esc(activeCat.cover_url)+'" alt="cover" style="width:100%;height:100%;object-fit:cover"/>':'')    +(isMod?'<div class="cat-cover-edit" onclick="catUploadCover(\''+esc(cat)+'\')" style="right:10px;bottom:10px">📷 Edit Cover</div>':'')    +'</div>'    +'<div style="padding:16px 20px 18px">'    +'<div style="display:flex;align-items:flex-start;gap:14px">'    +'<div style="flex-shrink:0;position:relative">'    +(activeCat.image_url      ?'<div style="width:64px;height:64px;border-radius:12px;border:3px solid var(--bg1);overflow:hidden;cursor:zoom-in;box-shadow:var(--shadow)" data-src="'+esc(activeCat.image_url)+'" onclick="openLightbox(this.dataset.src)"><img src="'+esc(activeCat.image_url)+'" style="width:100%;height:100%;object-fit:cover"/></div>'      :'<div style="width:64px;height:64px;border-radius:12px;border:3px solid var(--bg1);background:linear-gradient(135deg,'+col+'66,'+col+'33);display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:var(--shadow)">'+esc(activeCat.icon||'🎮')+'</div>')    +(isMod?'<div onclick="catUploadAvatar(\''+esc(cat)+'\')"><div style="position:absolute;bottom:-4px;right:-4px;width:20px;height:20px;background:var(--grad2);color:#fff;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer">✎</div></div>':'')    +'</div>'    +'<div style="flex:1;min-width:0">'    +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:4px">'    +'<div id="cat-name-display" style="font-family:var(--font-d);font-size:1.3rem;font-weight:700">'+esc(activeCat.name)+'</div>'    +(isMod?'<div class="row" style="gap:6px"><button class="btn btn-outline btn-sm" data-slug="'+esc(cat)+'" data-name="'+esc(activeCat.name)+'" data-desc="'+esc(activeCat.description||'')+'" onclick="showCatEditFormBtn(this)">✎ Edit</button>'+'<button class="btn btn-outline btn-sm" onclick="go(\'manage-community\',{slug:\''+esc(cat)+'\'})">⚙ Manage</button>'+'</div>':'')    +'</div>'    +'<div id="cat-desc-display" style="color:var(--txt2);font-size:13px;margin-bottom:10px">'+esc(activeCat.description||'No description yet.')+'</div>'    +'<div class="row wrap" style="gap:8px">'+'<div class="stat-pill"><div class="stat-num">'+(activeCat.thread_count||0)+'</div><div class="stat-lbl">Posts</div></div>'+'<div class="stat-pill"><div class="stat-num">'+(activeCat.member_count||0)+'</div><div class="stat-lbl">Members</div></div>'+(activeCat.weekly_posts?'<div class="stat-pill" style="color:var(--green)"><div class="stat-num" style="color:var(--green)">+'+activeCat.weekly_posts+'</div><div class="stat-lbl">This Week</div></div>':'')+(S.user?joinBtnHtml(cat,'sm'):'')    +(S.user?'<button class="btn btn-grad btn-sm" data-slug="'+esc(cat)+'" onclick="catPostClick(this)">+ Create Post</button>':'')    +'</div></div></div></div></div>'    +'<div id="cat-edit-form"></div>'    :''
   var pageLinks=''
   if(pagination.pages>1){if(page>1)pageLinks+='<button class="btn btn-outline" onclick="go(\'forum\',{category:\''+esc(cat)+'\',sort:\''+sort+'\',page:'+(page-1)+'})">‹ Prev</button>';pageLinks+='<span class="txt-dim txt-sm">Page '+page+' of '+pagination.pages+'</span>';if(page<pagination.pages)pageLinks+='<button class="btn btn-outline" onclick="go(\'forum\',{category:\''+esc(cat)+'\',sort:\''+sort+'\',page:'+(page+1)+'})">Next ›</button>'}
   var feed=threads.length===0?'<div class="card"><div class="empty"><div class="empty-icon">'+(activeCat?activeCat.icon:'🎮')+'</div><p style="font-weight:600;margin-bottom:6px">No posts yet</p>'+(S.user?'<button class="btn btn-grad mt2" data-slug="'+esc(cat)+'" onclick="catPostClick(this)">Be the first</button>':'')+'</div></div>':threads.map(postRowHtml).join('')
@@ -2044,8 +2059,8 @@ async function renderThread(){
   try{var r1=await GET('/forum/threads/'+id);thread=r1.thread;currentThreadId=thread.id;var r2=await GET('/forum/threads/'+id+'/replies?page='+rp);replies=r2.replies||[];pagination=r2.pagination||{}}
   catch(e){setContent('<div class="page full"><div class="card"><div class="empty">Post not found.</div></div></div>');return}
 
-  // Count view only once per hour per post using localStorage
-  var viewKey = 'vw_' + id
+  // Count view once per user per hour (key includes user id so different accounts count separately)
+  var viewKey = 'vw_' + id + '_' + (S.user ? S.user.id : 'guest')
   try {
     var lastView = parseInt(localStorage.getItem(viewKey) || '0')
     var oneHour = 60 * 60 * 1000
