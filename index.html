@@ -827,7 +827,73 @@ const S = {
   page:'home', params:{},
   votes: JSON.parse(localStorage.getItem('gh_votes')||'{}'),
   saves: JSON.parse(localStorage.getItem('gh_saves')||'{}'),
+  settings: JSON.parse(localStorage.getItem('gh_settings')||'{}'),
 }
+// ── SITE SETTINGS ─────────────────────────────────────────
+function SS(key, fallback){ return (S.settings && S.settings[key]) || fallback || '' }
+
+async function loadSiteSettings(){
+  try{
+    var r = await fetch('https://gamehub-backend.shotavixofficial.workers.dev/api/settings')
+    var data = await r.json()
+    if(data && data.settings){
+      S.settings = data.settings
+      localStorage.setItem('gh_settings', JSON.stringify(S.settings))
+      applySettings()
+    }
+  }catch(e){}
+}
+
+function applySettings(){
+  var accent = SS('accent_color', '#a855f7')
+  if(accent && accent !== '#a855f7'){
+    document.documentElement.style.setProperty('--accent', accent)
+    document.documentElement.style.setProperty('--accent3', accent)
+    document.documentElement.style.setProperty('--grad2', 'linear-gradient(135deg,'+accent+',#ec4899)')
+  }
+  var appName = SS('app_name', 'ZiphyNet')
+  document.title = appName
+  updateNavLabels()
+  if(SS('maintenance_mode','0') === '1' && !(S.user && S.user.role === 'admin')){
+    document.getElementById('app').innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;text-align:center;padding:24px"><div style="font-size:56px;margin-bottom:20px">🔧</div><div style="font-family:var(--font-d);font-size:1.5rem;font-weight:700;margin-bottom:8px">'+esc(appName)+' is under maintenance</div><div style="color:var(--txt3);max-width:360px">'+esc(SS('maintenance_message','We are performing maintenance. Back soon!'))+'</div></div>'
+    return false
+  }
+  return true
+}
+
+function getSetting(key, fallback){ return SS(key, fallback) }
+
+function getNavLabel(key, fallback){ return SS(key, fallback) }
+
+function getBlogTabs(){
+  var tabs = [{id:'', label:'All Posts'}]
+  for(var i=1; i<=3; i++){
+    var id = SS('blog_tab_'+i+'_id','')
+    var label = SS('blog_tab_'+i+'_label','')
+    if(id && label) tabs.push({id:id, label:label})
+  }
+  return tabs
+}
+
+function updateNavLabels(){
+  // Update mobile bottom nav text labels from settings
+  var navMap = {
+    'mbn-home': SS('nav_home_label','Home'),
+    'mbn-cats': SS('nav_browse_label','Browse'),
+    'mbn-post': SS('nav_post_label','Post'),
+    'mbn-blog': SS('nav_blog_label','Blog'),
+    'mbn-profile': SS('nav_profile_label','Profile'),
+  }
+  Object.keys(navMap).forEach(function(id){
+    var btn = document.getElementById(id)
+    if(!btn) return
+    // The text node is the last child (after SVG/div)
+    var nodes = Array.from(btn.childNodes)
+    var textNode = nodes.find(function(n){ return n.nodeType===3 && n.textContent.trim() })
+    if(textNode) textNode.textContent = '\n    '+navMap[id]+'\n  '
+  })
+}
+
 function setAuth(t,u){
   S.token=t;S.user=u
   localStorage.setItem('gh_token',t)
@@ -2996,10 +3062,18 @@ function adminGoThread(el){var id=el.dataset.tid;if(id)go('thread',{id:id})}
 async function renderAdmin(){
   if(!S.user||S.user.role!=='admin'){toast('Admin access required','er');go('home');return}
   setContent('<div class="admin-wrap"><div class="loading">Loading admin panel</div></div>')
-  var tabs=[{id:'dashboard',label:'📊 Dashboard'},{id:'users',label:'👥 Users'},{id:'posts',label:'📝 Posts'},{id:'categories',label:'🗂 Categories'},{id:'reports',label:'🚨 Reports'}]
+  var tabs=[{id:'dashboard',label:'📊 Dashboard'},{id:'analytics',label:'📈 Analytics'},{id:'users',label:'👥 Users'},{id:'posts',label:'📝 Posts'},{id:'categories',label:'🗂 Categories'},{id:'reports',label:'🚨 Reports'},{id:'settings',label:'⚙ Site Settings'}]
   var tabHtml='<div class="admin-tabs">'+tabs.map(function(t){return '<button class="admin-tab'+(adminTab===t.id?' active':'')+'" data-tab="'+t.id+'" onclick="switchAdminTab(this.dataset.tab)">'+t.label+'</button>'}).join('')+'</div>'
   var bodyHtml='<div class="loading">Loading</div>'
-  try{if(adminTab==='dashboard')bodyHtml=await buildAdminDashboard();if(adminTab==='users')bodyHtml=await buildAdminUsers();if(adminTab==='posts')bodyHtml=await buildAdminPosts();if(adminTab==='categories')bodyHtml=await buildAdminCategories();if(adminTab==='reports')bodyHtml=await buildAdminReports()}
+  try{
+    if(adminTab==='dashboard') bodyHtml=await buildAdminDashboard()
+    if(adminTab==='analytics') bodyHtml=await buildAdminAnalytics()
+    if(adminTab==='users') bodyHtml=await buildAdminUsers()
+    if(adminTab==='posts') bodyHtml=await buildAdminPosts()
+    if(adminTab==='categories') bodyHtml=await buildAdminCategories()
+    if(adminTab==='reports') bodyHtml=await buildAdminReports()
+    if(adminTab==='settings') bodyHtml=await buildAdminSettings()
+  }
   catch(e){bodyHtml='<div class="card"><div class="empty">Failed to load: '+esc(e.message)+'</div></div>'}
   setContent('<div class="admin-wrap"><div style="margin-bottom:20px"><div style="font-family:var(--font-d);font-size:1.6rem;font-weight:700">⚙ Admin Panel</div><div style="color:var(--txt3);font-size:13px;margin-top:4px">ZiphyNet management console</div></div>'+tabHtml+bodyHtml+'</div>')
 }
@@ -3038,17 +3112,148 @@ async function resolveReport(btn, status){
 
 
 async function buildAdminDashboard(){
-  var r=await apiFetch('/admin/stats'),s=r.stats
-  var html='<div class="stat-grid">'
-    +'<div class="stat-card"><div class="stat-card-num">'+s.users+'</div><div class="stat-card-lbl">Total Users</div></div>'
+  var r=await apiFetch('/admin/stats'), s=r.stats
+  var html='<div class="stat-grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">'
+    +'<div class="stat-card" style="border-top:3px solid var(--accent)"><div class="stat-card-num">'+s.users+'</div><div class="stat-card-lbl">Total Users</div></div>'
+    +'<div class="stat-card" style="border-top:3px solid #22c55e"><div class="stat-card-num" style="color:#22c55e">'+s.onlineNow+'</div><div class="stat-card-lbl">Online Now</div></div>'
     +'<div class="stat-card"><div class="stat-card-num">'+s.threads+'</div><div class="stat-card-lbl">Total Posts</div></div>'
     +'<div class="stat-card"><div class="stat-card-num">'+s.replies+'</div><div class="stat-card-lbl">Comments</div></div>'
-    +'<div class="stat-card"><div class="stat-card-num">'+s.votes+'</div><div class="stat-card-lbl">Votes Cast</div></div></div>'
-  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:4px">'
-  html+='<div class="card" style="overflow:hidden"><div style="padding:14px 16px;font-weight:700;font-size:13px;border-bottom:1px solid var(--border)">🆕 Recent Users</div><table class="admin-table"><thead><tr><th>User</th><th>Role</th><th>Joined</th></tr></thead><tbody>'+r.recentUsers.map(function(u){var rc=u.role==='admin'?'role-admin':u.role==='moderator'?'role-mod':'role-member';return '<tr><td><strong>u/'+esc(u.username)+'</strong><br><span style="font-size:11px;color:var(--txt3)">'+esc(u.email)+'</span></td><td><span class="role-badge '+rc+'">'+esc(u.role)+'</span></td><td>'+ago(u.created_at)+'</td></tr>'}).join('')+'</tbody></table></div>'
-  html+='<div class="card" style="overflow:hidden"><div style="padding:14px 16px;font-weight:700;font-size:13px;border-bottom:1px solid var(--border)">🆕 Recent Posts</div><table class="admin-table"><thead><tr><th>Title</th><th>By</th><th>Views</th></tr></thead><tbody>'+r.recentThreads.map(function(t){return '<tr class="clickable" data-tid="'+esc(t.id)+'" onclick="adminGoThread(this)" style="cursor:pointer"><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(t.title)+'</td><td>u/'+esc(t.username)+'</td><td>'+(t.views||0)+'</td></tr>'}).join('')+'</tbody></table></div></div>'
+    +'<div class="stat-card"><div class="stat-card-num">'+s.votes+'</div><div class="stat-card-lbl">Votes Cast</div></div>'
+    +'<div class="stat-card"><div class="stat-card-num">'+s.messages+'</div><div class="stat-card-lbl">DMs Sent</div></div>'
+    +(s.pendingReports>0?'<div class="stat-card" style="border-top:3px solid #ef4444"><div class="stat-card-num" style="color:#ef4444">'+s.pendingReports+'</div><div class="stat-card-lbl">Reports Pending</div></div>':'')
+    +'</div>'
+  html+='<div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-top:4px">'
+    +'<div class="stat-card"><div style="font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">New Users</div><div style="display:flex;justify-content:space-between"><div><div style="font-size:11px;color:var(--txt3)">Today</div><div style="font-size:1.2rem;font-weight:700">'+s.usersToday+'</div></div><div><div style="font-size:11px;color:var(--txt3)">Week</div><div style="font-size:1.2rem;font-weight:700">'+s.usersWeek+'</div></div><div><div style="font-size:11px;color:var(--txt3)">Month</div><div style="font-size:1.2rem;font-weight:700">'+s.usersMonth+'</div></div></div></div>'
+    +'<div class="stat-card"><div style="font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">New Posts</div><div style="display:flex;justify-content:space-between"><div><div style="font-size:11px;color:var(--txt3)">Today</div><div style="font-size:1.2rem;font-weight:700">'+s.threadsToday+'</div></div><div><div style="font-size:11px;color:var(--txt3)">Week</div><div style="font-size:1.2rem;font-weight:700">'+s.threadsWeek+'</div></div></div></div>'
+    +'<div class="stat-card" style="cursor:pointer" onclick="switchAdminTab(\'reports\')"><div style="font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Reports</div><div style="font-size:1.5rem;font-weight:700;color:'+(s.pendingReports>0?'#ef4444':'#22c55e')+'">'+s.pendingReports+'</div><div style="font-size:12px;color:var(--txt3)">pending</div></div>'
+    +'</div>'
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:4px">'
+  html+='<div class="card" style="overflow:hidden"><div style="padding:14px 16px;font-weight:700;font-size:13px;border-bottom:1px solid var(--border)">New Users</div><table class="admin-table"><thead><tr><th>User</th><th>Role</th><th>Joined</th></tr></thead><tbody>'+r.recentUsers.map(function(u){var rc=u.role==='admin'?'role-admin':u.role==='moderator'?'role-mod':'role-member';return '<tr><td><strong>u/'+esc(u.username)+'</strong><br><span style="font-size:11px;color:var(--txt3)">'+esc(u.email)+'</span></td><td><span class="role-badge '+rc+'">'+esc(u.role)+'</span></td><td>'+ago(u.created_at)+'</td></tr>'}).join('')+'</tbody></table></div>'
+  html+='<div class="card" style="overflow:hidden"><div style="padding:14px 16px;font-weight:700;font-size:13px;border-bottom:1px solid var(--border)">Top Posts by Views</div><table class="admin-table"><thead><tr><th>Title</th><th>By</th><th>Views</th></tr></thead><tbody>'+r.topPosts.map(function(t){return '<tr class="clickable" data-tid="'+esc(t.id)+'" onclick="adminGoThread(this)" style="cursor:pointer"><td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(t.title)+'</td><td>u/'+esc(t.username)+'</td><td>'+String(t.views||0)+'</td></tr>'}).join('')+'</tbody></table></div></div>'
   return html
 }
+
+async function buildAdminAnalytics(){
+  var r = await apiFetch('/admin/stats'), s = r.stats
+  var growth = r.growth || [], topCats = r.topCategories || []
+  var maxG = Math.max.apply(null, growth.map(function(g){return g.count})) || 1
+  var bars = growth.map(function(g){
+    var pct = Math.round((g.count/maxG)*100)
+    return '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">'
+      +'<div style="font-size:11px;font-weight:700;color:var(--txt1)">'+g.count+'</div>'
+      +'<div style="width:100%;background:var(--bg3);border-radius:4px 4px 0 0;height:80px;display:flex;align-items:flex-end">'
+      +'<div style="width:100%;background:var(--accent);border-radius:4px 4px 0 0;height:'+pct+'%;min-height:4px"></div>'
+      +'</div>'
+      +'<div style="font-size:10px;color:var(--txt3)">'+(g.day?g.day.slice(5):'')+'</div>'
+      +'</div>'
+  }).join('')
+  var html = '<div class="card" style="padding:20px;margin-bottom:16px">'
+    +'<div style="font-weight:700;font-size:14px;margin-bottom:4px">New Users - Last 7 Days</div>'
+    +'<div style="font-size:12px;color:var(--txt3);margin-bottom:20px">Today: <strong>'+s.usersToday+'</strong> &nbsp; Week: <strong>'+s.usersWeek+'</strong> &nbsp; Month: <strong>'+s.usersMonth+'</strong></div>'
+    +(growth.length?'<div style="display:flex;gap:6px;align-items:flex-end;height:110px">'+bars+'</div>':'<div style="color:var(--txt3);font-size:13px;padding:20px 0">No data yet - users need to sign up first</div>')
+    +'</div>'
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
+  html += '<div class="card" style="padding:20px"><div style="font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Online Right Now</div>'
+    +'<div style="font-size:3rem;font-weight:800;color:#22c55e">'+s.onlineNow+'</div>'
+    +'<div style="font-size:12px;color:var(--txt3);margin-top:4px">Active in last 5 minutes</div></div>'
+  html += '<div class="card" style="overflow:hidden"><div style="padding:14px 16px;font-weight:700;font-size:13px;border-bottom:1px solid var(--border)">Top Communities</div>'
+    +'<table class="admin-table"><tbody>'
+    +topCats.map(function(c){return '<tr><td>'+esc(c.icon||'')+'  <strong>'+esc(c.name)+'</strong></td><td style="text-align:right;color:var(--txt3)">'+String(c.posts||0)+' posts</td></tr>'}).join('')
+    +'</tbody></table></div>'
+  html += '</div>'
+  html += '<div class="stat-grid" style="grid-template-columns:repeat(auto-fill,minmax(130px,1fr));margin-top:16px">'
+    +'<div class="stat-card"><div class="stat-card-num">'+s.votes+'</div><div class="stat-card-lbl">Votes Cast</div></div>'
+    +'<div class="stat-card"><div class="stat-card-num">'+s.replies+'</div><div class="stat-card-lbl">Comments</div></div>'
+    +'<div class="stat-card"><div class="stat-card-num">'+s.messages+'</div><div class="stat-card-lbl">DMs Sent</div></div>'
+    +'<div class="stat-card"><div class="stat-card-num">'+s.blocked+'</div><div class="stat-card-lbl">Blocks Made</div></div>'
+    +'</div>'
+  return html
+}
+
+async function buildAdminSettings(){
+  var r = await apiFetch('/settings'), st = r.settings || {}
+  function sv(key,fb){ return esc((st[key])||fb||'') }
+  var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
+  html += '<div class="card" style="padding:20px">'
+    +'<div style="font-weight:700;font-size:14px;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border)">App Identity</div>'
+    +'<div class="fstack">'
+    +'<div class="field"><label>App Name</label><input class="input" id="as-app-name" value="'+sv('app_name','ZiphyNet')+'" placeholder="ZiphyNet"/></div>'
+    +'<div class="field"><label>Home Feed Tagline</label><input class="input" id="as-tagline" value="'+sv('home_tagline','The front page of gaming.')+'" placeholder="Your tagline"/></div>'
+    +'<div class="field"><label>Accent Color</label><div style="display:flex;gap:8px;align-items:center"><input class="input" id="as-accent" value="'+sv('accent_color','#a855f7')+'" placeholder="#a855f7" style="flex:1"/><input type="color" id="as-accent-picker" value="'+(st['accent_color']||'#a855f7')+'" oninput="document.getElementById(\'as-accent\').value=this.value" style="width:40px;height:36px;border:none;border-radius:var(--r);cursor:pointer;background:none;padding:0"/></div></div>'
+    +'</div></div>'
+  html += '<div class="card" style="padding:20px">'
+    +'<div style="font-weight:700;font-size:14px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">Navigation Tab Labels</div>'
+    +'<div style="font-size:12px;color:var(--txt3);margin-bottom:12px">Rename the mobile bottom nav tabs</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    +'<div class="field"><label>Home</label><input class="input" id="as-nav-home" value="'+sv('nav_home_label','Home')+'"/></div>'
+    +'<div class="field"><label>Browse</label><input class="input" id="as-nav-browse" value="'+sv('nav_browse_label','Browse')+'"/></div>'
+    +'<div class="field"><label>Post Button</label><input class="input" id="as-nav-post" value="'+sv('nav_post_label','Post')+'"/></div>'
+    +'<div class="field"><label>Blog Tab</label><input class="input" id="as-nav-blog" value="'+sv('nav_blog_label','Blog')+'"/></div>'
+    +'<div class="field"><label>Profile</label><input class="input" id="as-nav-profile" value="'+sv('nav_profile_label','Profile')+'"/></div>'
+    +'</div></div>'
+  html += '</div>'
+  html += '<div class="card" style="padding:20px;margin-top:16px">'
+    +'<div style="font-weight:700;font-size:14px;margin-bottom:6px;padding-bottom:10px;border-bottom:1px solid var(--border)">Blog Page Tabs</div>'
+    +'<div style="font-size:12px;color:var(--txt3);margin-bottom:16px">Configure up to 3 category tabs (leave blank to hide). The "All Posts" tab is always shown.</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">'
+    +[1,2,3].map(function(i){
+      return '<div class="card" style="padding:14px;background:var(--bg2)">'
+        +'<div style="font-size:11px;font-weight:700;color:var(--txt3);margin-bottom:10px">Tab '+i+'</div>'
+        +'<div class="field"><label>Category ID</label><input class="input" id="as-tab'+i+'-id" value="'+sv('blog_tab_'+i+'_id',i===1?'news':'')+'" placeholder="e.g. news"/></div>'
+        +'<div class="field"><label>Label</label><input class="input" id="as-tab'+i+'-label" value="'+sv('blog_tab_'+i+'_label',i===1?'News':'')+'" placeholder="e.g. News"/></div>'
+        +'</div>'
+    }).join('')
+    +'</div></div>'
+  var mcheck = st['maintenance_mode']==='1'
+  html += '<div class="card" style="padding:20px;margin-top:16px">'
+    +'<div style="font-weight:700;font-size:14px;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border)">Maintenance Mode</div>'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
+    +'<div><div style="font-weight:600;font-size:13px">Enable Maintenance Mode</div><div style="font-size:12px;color:var(--txt3)">Shows maintenance screen to non-admin users</div></div>'
+    +'<input type="checkbox" id="as-maintenance" '+(mcheck?'checked':'')+' style="width:20px;height:20px;cursor:pointer;accent-color:var(--accent)"/>'
+    +'</div>'
+    +'<div class="field"><label>Maintenance Message</label><input class="input" id="as-maint-msg" value="'+sv('maintenance_message','We are performing maintenance. Back soon!')+'" placeholder="Message shown to users"/></div>'
+    +'</div>'
+  html += '<div class="card" style="padding:20px;margin-top:16px">'
+    +'<div style="font-weight:700;font-size:14px;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border)">Footer Links</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
+    +'<div class="field"><label>Help URL</label><input class="input" id="as-footer-help" value="'+sv('footer_help_url','mailto:help@ziphynet.com')+'" placeholder="mailto:help@..."/></div>'
+    +'<div class="field"><label>About Page Route</label><input class="input" id="as-footer-about" value="'+sv('footer_about_page','about')+'" placeholder="about"/></div>'
+    +'</div></div>'
+  html += '<div style="margin-top:20px;display:flex;gap:12px">'
+    +'<button class="btn btn-grad" onclick="saveAdminSettings()" style="padding:11px 28px">Save All Settings</button>'
+    +'<button class="btn btn-ghost" onclick="loadSiteSettings().then(function(){applySettings();toast(\'Reloaded\')})">Reload from Server</button>'
+    +'</div>'
+  return html
+}
+
+async function saveAdminSettings(){
+  var maint = document.getElementById('as-maintenance')
+  function gv(id){ return (document.getElementById(id)||{}).value||'' }
+  var payload = {
+    app_name: gv('as-app-name')||'ZiphyNet',
+    home_tagline: gv('as-tagline'),
+    accent_color: gv('as-accent')||'#a855f7',
+    nav_home_label: gv('as-nav-home')||'Home',
+    nav_browse_label: gv('as-nav-browse')||'Browse',
+    nav_post_label: gv('as-nav-post')||'Post',
+    nav_blog_label: gv('as-nav-blog')||'Blog',
+    nav_profile_label: gv('as-nav-profile')||'Profile',
+    blog_tab_1_id: gv('as-tab1-id'), blog_tab_1_label: gv('as-tab1-label'),
+    blog_tab_2_id: gv('as-tab2-id'), blog_tab_2_label: gv('as-tab2-label'),
+    blog_tab_3_id: gv('as-tab3-id'), blog_tab_3_label: gv('as-tab3-label'),
+    footer_help_url: gv('as-footer-help'), footer_about_page: gv('as-footer-about')||'about',
+    maintenance_mode: maint && maint.checked ? '1' : '0',
+    maintenance_message: gv('as-maint-msg'),
+  }
+  try{
+    var r = await apiFetch('/admin/settings', {method:'POST', body:JSON.stringify(payload)})
+    S.settings = r.settings
+    localStorage.setItem('gh_settings', JSON.stringify(S.settings))
+    applySettings()
+    toast('Settings saved and applied!')
+  }catch(e){ toast(e.message,'er') }
+}
+
 async function buildAdminUsers(){
   var r=await apiFetch('/admin/users?page=1')
   return '<div class="admin-form"><h3>Search Users</h3><div class="row"><input class="input" id="admin-user-q" placeholder="Search by username or email…" style="max-width:360px"/><button class="btn btn-grad btn-sm" onclick="searchAdminUsers()">Search</button></div></div><div class="card" style="overflow:hidden" id="admin-users-table">'+buildUserTable(r.users)+'</div>'
@@ -3896,9 +4101,9 @@ async function renderBlog(){
   var posts = []
   try{ var r = await GET('/blog?'+qs.join('&')); posts = r.posts||[] }catch(e){ toast('Failed to load blog','er') }
 
-  var tabs = [{id:'', label:'All Posts'},{id:'news', label:'📰 News'}]
+  var tabs = getBlogTabs()
   // Add any extra categories found in fetched posts dynamically
-  var knownCats = ['', 'news']
+  var knownCats = tabs.map(function(t){ return t.id })
   posts.forEach(function(p){
     if(p.category && !knownCats.includes(p.category)){
       knownCats.push(p.category)
@@ -4309,17 +4514,21 @@ function blogStartCountdown(links){
 
 restoreFromUrl()
 startNotifPolling()
-// Sync latest user data (avatar etc) and votes before first render
-if(S.user){
-  Promise.all([syncUserProfile(), loadUserVotes()]).then(function(){
+// Load site settings first, then sync user data, then render
+loadSiteSettings().then(function(){
+  if(S.user){
+    Promise.all([syncUserProfile(), loadUserVotes()]).then(function(){
+      if(!applySettings()) return
+      if(S.page==='home') go('home')
+      else render()
+    })
+  } else {
+    if(!applySettings()) return
     if(S.page==='home') go('home')
     else render()
-  })
-} else {
-  if(S.page==='home') go('home')
-  else render()
-}
-setTimeout(checkConsent, 800)
+  }
+})
+setTimeout(checkConsent, 1000)
 </script>
 <div class="mobile-bottom-nav" id="mbn">
   <button class="mbn-btn" id="mbn-home" onclick="go('home')">
