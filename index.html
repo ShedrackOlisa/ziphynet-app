@@ -4219,6 +4219,14 @@ async function renderManageCommunity(){
     +'<span> Members ('+members.length+')</span>'
     +'<span style="font-size:11px;color:var(--txt3)">'+staffCount+'/10 staff slots used</span>'
     +'</div>'
+    // Add user search box
+    +'<div style="padding:12px 16px;border-bottom:1px solid var(--border);background:var(--bg2)">'
+    +'<div style="font-size:12px;font-weight:600;color:var(--txt3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Add Member as Staff</div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<input class="input" id="cm-user-search" placeholder="Search by username..." style="flex:1;font-size:13px" oninput="communityUserSearch(this,\''+esc(slug)+'\')" autocomplete="off"/>'
+    +'</div>'
+    +'<div id="cm-user-results" style="margin-top:8px"></div>'
+    +'</div>'
     +'<div style="max-height:400px;overflow-y:auto">'+membersHtml+'</div>'
     +'</div>'
     // Posts card
@@ -4248,6 +4256,32 @@ async function communityDeletePost(btn){
     renderManageCommunity()
   }catch(e){ toast(e.message,'er') }
 }
+var _communitySearchTimer = null
+async function communityUserSearch(inp, slug){
+  var q = inp.value.trim()
+  var resultsEl = document.getElementById('cm-user-results')
+  if(!resultsEl) return
+  if(q.length < 2){ resultsEl.innerHTML=''; return }
+  clearTimeout(_communitySearchTimer)
+  _communitySearchTimer = setTimeout(async function(){
+    try{
+      var r = await GET('/search?q='+encodeURIComponent(q))
+      var users = (r.users||[]).slice(0,6)
+      if(!users.length){ resultsEl.innerHTML='<div style="font-size:12px;color:var(--txt3);padding:6px 0">No users found</div>'; return }
+      resultsEl.innerHTML = '<div style="display:flex;flex-direction:column;gap:6px">'
+        +users.map(function(u){
+          return '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg1);border-radius:var(--r-lg);border:1px solid var(--border)">'
+            +avHtml(u.username,30,u.avatar_url)
+            +'<span style="flex:1;font-size:13px;font-weight:600">u/'+esc(u.username)+'</span>'
+            +'<button class="btn btn-outline btn-xs" style="border-color:#a855f7;color:#a855f7" data-slug="'+esc(slug)+'" data-uid="'+esc(u.id)+'" data-action="setrole" data-role="admin" onclick="communityMemberAction(this);document.getElementById(\'cm-user-search\').value=\'\';document.getElementById(\'cm-user-results\').innerHTML=\'\'">Make Admin</button>'
+            +'<button class="btn btn-outline btn-xs" data-slug="'+esc(slug)+'" data-uid="'+esc(u.id)+'" data-action="setrole" data-role="moderator" onclick="communityMemberAction(this);document.getElementById(\'cm-user-search\').value=\'\';document.getElementById(\'cm-user-results\').innerHTML=\'\'">Make Mod</button>'
+            +'</div>'
+        }).join('')
+        +'</div>'
+    }catch(e){ resultsEl.innerHTML='' }
+  }, 300)
+}
+
 async function communityApprovePost(btn, action){
   var slug=btn.dataset.slug, tid=btn.dataset.tid
   btn.disabled=true
@@ -4275,8 +4309,13 @@ async function saveManagedCommunity(slug){
 async function communityMemberAction(btn){
   var slug=btn.dataset.slug, uid=btn.dataset.uid, action=btn.dataset.action, role=btn.dataset.role
   try{
+    // If assigning a role, first ensure the user is a member
+    if(action==='setrole'){
+      await apiFetch('/communities/'+slug+'/join-as',{method:'POST',body:JSON.stringify({target_user_id:uid,role:role})}).catch(function(){})
+    }
     await apiFetch('/communities/'+slug+'/members',{method:'POST',body:JSON.stringify({target_user_id:uid,action:action,role:role})})
-    toast('Done!'); renderManageCommunity()
+    toast(action==='setrole'?'Role updated!':action==='ban'?'User banned':'Done!')
+    renderManageCommunity()
   }catch(e){ toast(e.message,'er') }
 }
 
