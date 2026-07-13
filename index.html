@@ -3254,6 +3254,12 @@ function confirmMakeAdmin(btn){
   adminSetRole(uid, uname, 'admin')
 }
 
+function confirmRemoveAdmin(btn){
+  var uid = btn.dataset.uid, uname = btn.dataset.uname
+  if(!confirm('Remove u/'+uname+' as Admin?\n\nThey will lose all admin privileges immediately and be demoted to regular member.\n\nAre you sure?')) return
+  adminSetRole(uid, uname, 'member')
+}
+
 
 
 async function buildAdminReports(){
@@ -3460,7 +3466,7 @@ async function buildAdminUsers(){
 }
 function buildUserTable(users){
   if(!users||!users.length)return '<div class="empty" style="padding:32px">No users found.</div>'
-  return '<table class="admin-table"><thead><tr><th>User</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+users.map(function(u){var rc=u.role==='admin'?'role-admin':u.role==='moderator'?'role-mod':'role-member';var banned=u.is_banned?'<span class="banned-badge">BANNED</span>':'';var makeAdmin=u.role!=='admin'?'<button class="btn btn-outline btn-xs" style="border-color:#a855f7;color:#a855f7" data-uid="'+esc(u.id)+'" data-uname="'+esc(u.username)+'" data-role="admin" onclick="confirmMakeAdmin(this)">Make Admin</button>':'';var makeMod=u.role!=='admin'&&u.role!=='moderator'?'<button class="btn btn-outline btn-xs" data-uid="'+esc(u.id)+'" data-uname="'+esc(u.username)+'" data-role="moderator" onclick="adminSetRoleBtn(this)">Make Mod</button>':'';var removeMod=u.role!=='member'&&u.role!=='admin'?'<button class="btn btn-outline btn-xs" data-uid="'+esc(u.id)+'" data-uname="'+esc(u.username)+'" data-role="member" onclick="adminSetRoleBtn(this)">Remove Mod</button>':'';var banBtn='<button class="btn btn-xs '+(u.is_banned?'btn-grad':'btn-danger')+'" data-uid="'+esc(u.id)+'" data-uname="'+esc(u.username)+'" data-banned="'+(u.is_banned?1:0)+'" onclick="adminToggleBanBtn(this)">'+(u.is_banned?'Unban':'Ban')+'</button>';return '<tr><td><strong>u/'+esc(u.username)+'</strong></td><td style="color:var(--txt3)">'+esc(u.email)+'</td><td><span class="role-badge '+rc+'">'+esc(u.role)+'</span></td><td>'+banned+'</td><td><div class="action-row">'+makeAdmin+makeMod+removeMod+banBtn+'</div></td></tr>'}).join('')+'</tbody></table>'
+  return '<table class="admin-table"><thead><tr><th>User</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+users.map(function(u){var rc=u.role==='admin'?'role-admin':u.role==='moderator'?'role-mod':'role-member';var banned=u.is_banned?'<span class="banned-badge">BANNED</span>':'';var makeAdmin=u.role!=='admin'?'<button class="btn btn-outline btn-xs" style="border-color:#a855f7;color:#a855f7" data-uid="'+esc(u.id)+'" data-uname="'+esc(u.username)+'" data-role="admin" onclick="confirmMakeAdmin(this)">Make Admin</button>':'';var removeAdmin=u.role==='admin'&&u.id!==S.user.id?'<button class="btn btn-danger btn-xs" data-uid="'+esc(u.id)+'" data-uname="'+esc(u.username)+'" data-role="member" onclick="confirmRemoveAdmin(this)">Remove Admin</button>':'';var makeMod=u.role!=='admin'&&u.role!=='moderator'?'<button class="btn btn-outline btn-xs" data-uid="'+esc(u.id)+'" data-uname="'+esc(u.username)+'" data-role="moderator" onclick="adminSetRoleBtn(this)">Make Mod</button>':'';var removeMod=u.role!=='member'&&u.role!=='admin'?'<button class="btn btn-outline btn-xs" data-uid="'+esc(u.id)+'" data-uname="'+esc(u.username)+'" data-role="member" onclick="adminSetRoleBtn(this)">Remove Mod</button>':'';var banBtn='<button class="btn btn-xs '+(u.is_banned?'btn-grad':'btn-danger')+'" data-uid="'+esc(u.id)+'" data-uname="'+esc(u.username)+'" data-banned="'+(u.is_banned?1:0)+'" onclick="adminToggleBanBtn(this)">'+(u.is_banned?'Unban':'Ban')+'</button>';return '<tr><td><strong>u/'+esc(u.username)+'</strong></td><td style="color:var(--txt3)">'+esc(u.email)+'</td><td><span class="role-badge '+rc+'">'+esc(u.role)+'</span></td><td>'+banned+'</td><td><div class="action-row">'+removeAdmin+makeAdmin+makeMod+removeMod+banBtn+'</div></td></tr>'}).join('')+'</tbody></table>'
 }
 function adminSetRoleBtn(btn){adminSetRole(btn.dataset.uid,btn.dataset.uname,btn.dataset.role)}
 function adminToggleBanBtn(btn){adminToggleBan(btn.dataset.uid,btn.dataset.uname,parseInt(btn.dataset.banned))}
