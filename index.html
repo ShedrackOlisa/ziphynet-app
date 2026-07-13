@@ -828,8 +828,75 @@ const S = {
   votes: JSON.parse(localStorage.getItem('gh_votes')||'{}'),
   saves: JSON.parse(localStorage.getItem('gh_saves')||'{}'),
   settings: JSON.parse(localStorage.getItem('gh_settings')||'{}'),
+  joined: JSON.parse(localStorage.getItem('gh_joined')||'{}'),
 }
-// ── SITE SETTINGS ─────────────────────────────────────────
+// ── COMMUNITY JOIN / LEAVE ─────────────────────────────────
+function isJoined(slug){
+  return !!S.joined[slug]
+}
+
+function updateJoinedFromCategories(cats){
+  // Cache membership state from categories API response
+  if(!cats || !S.user) return
+  cats.forEach(function(c){
+    if(c.user_role !== null && c.user_role !== undefined){
+      S.joined[c.slug] = c.user_role || 'member'
+    }
+  })
+  localStorage.setItem('gh_joined', JSON.stringify(S.joined))
+}
+
+async function joinCommunity(slug, btn){
+  if(!S.user){ go('login'); return }
+  if(btn){ btn.disabled=true; btn.textContent='Joining...' }
+  try{
+    await apiFetch('/communities/'+slug+'/join', {method:'POST'})
+    S.joined[slug] = 'member'
+    localStorage.setItem('gh_joined', JSON.stringify(S.joined))
+    toast('Joined!')
+    // Refresh any join buttons on screen
+    document.querySelectorAll('[data-join-slug="'+slug+'"]').forEach(function(b){
+      b.textContent='Joined'
+      b.style.background='var(--bg3)'
+      b.style.color='var(--txt1)'
+      b.onclick=function(){ leaveCommunity(slug, b) }
+    })
+  }catch(e){
+    toast(e.message,'er')
+    if(btn){ btn.disabled=false; btn.textContent='Join' }
+  }
+}
+
+async function leaveCommunity(slug, btn){
+  if(!confirm('Leave this community?')) return
+  if(btn){ btn.disabled=true; btn.textContent='Leaving...' }
+  try{
+    await apiFetch('/communities/'+slug+'/join', {method:'DELETE'})
+    delete S.joined[slug]
+    localStorage.setItem('gh_joined', JSON.stringify(S.joined))
+    toast('Left community')
+    document.querySelectorAll('[data-join-slug="'+slug+'"]').forEach(function(b){
+      b.textContent='Join'
+      b.style.background='var(--accent)'
+      b.style.color='#fff'
+      b.onclick=function(){ joinCommunity(slug, b) }
+    })
+  }catch(e){
+    toast(e.message,'er')
+    if(btn){ btn.disabled=false; btn.textContent='Joined' }
+  }
+}
+
+function joinBtnHtml(slug, size){
+  if(!S.user) return ''
+  var joined = isJoined(slug)
+  var sz = size==='sm' ? 'padding:3px 10px;font-size:11px' : 'padding:5px 14px;font-size:12px'
+  return '<button data-join-slug="'+esc(slug)+'" onclick="event.stopPropagation();'+(joined?'leaveCommunity':'joinCommunity')+'(\''+esc(slug)+'\',this)" '
+    +'style="'+sz+';border-radius:99px;font-weight:700;border:none;cursor:pointer;transition:all .15s;flex-shrink:0;'
+    +(joined?'background:var(--bg3);color:var(--txt1)':'background:var(--accent);color:#fff')+'">'+( joined?'Joined':'Join')+'</button>'
+}
+
+
 function SS(key, fallback){ return (S.settings && S.settings[key]) || fallback || '' }
 
 async function loadSiteSettings(){
@@ -1477,6 +1544,7 @@ function postRowHtml(t){
     +'<span class="txt-dim">'+ago(t.created_at)+'</span><span class="txt-dim">· 👁 '+(t.views||0)+'</span>'
     +(t.is_pinned?'<span class="tag pinned-tag">📌 Pinned</span>':'')+(t.is_locked?'<span class="tag locked-tag">🔒</span>':'')
     +'</div>'
+    +(t.category_slug?'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'+'<span style="font-size:11px;color:var(--txt3)">'+esc(t.category_name||'')+'</span>'+joinBtnHtml(t.category_slug,'sm')+'</div>':'')
     +(t.shared_from_id && t.title==='Shared a post' ? '' : '<div class="post-title">'+(t.flair?flairHtml(t.flair)+' ':'')+esc(t.title)+'</div>')
     +media
     +sharedPostCard(t)
@@ -1902,7 +1970,7 @@ async function renderHome(){
   setContent('<div class="page"><div class="loading">Loading feed</div></div>')
   var sort=S.params.sort||'hot',cats=[],threads=[]
   try{
-    var r1=await GET('/forum/categories');cats=r1.categories||[]
+    var r1=await GET('/forum/categories');cats=r1.categories||[];updateJoinedFromCategories(cats)
     var r2=await GET('/forum/threads?sort='+sort);threads=r2.threads||[]
   }catch(e){toast(e.message,'er')}
 
@@ -1934,7 +2002,7 @@ async function renderForum(){
   setContent('<div class="page"><div class="loading">Loading</div></div>')
   var cat=S.params.category||'',sort=S.params.sort||'hot',page=S.params.page||1
   var cats=[],threads=[],pagination={},activeCat=null
-  try{var r1=await GET('/forum/categories');cats=r1.categories||[];var r2=await GET('/forum/threads?'+(cat?'category='+cat+'&':'')+'sort='+sort+'&page='+page);threads=r2.threads||[];pagination=r2.pagination||{};activeCat=cats.find(function(c){return c.slug===cat})}catch(e){toast(e.message,'er')}
+  try{var r1=await GET('/forum/categories');cats=r1.categories||[];updateJoinedFromCategories(cats);var r2=await GET('/forum/threads?'+(cat?'category='+cat+'&':'')+'sort='+sort+'&page='+page);threads=r2.threads||[];pagination=r2.pagination||{};activeCat=cats.find(function(c){return c.slug===cat})}catch(e){toast(e.message,'er')}
   var col=activeCat?cc(activeCat.slug):'var(--accent)'
   // Check if user can manage this community
   // 1. Site admin/mod
@@ -1952,7 +2020,7 @@ async function renderForum(){
   }
   var isMod = isSiteAdmin || isCommunityOwner || isCommunityMod
   var heroHtml=activeCat
-    ?'<div class="c-hero mb2" style="border-radius:var(--r-xl);overflow:hidden;background:var(--bg1);border:1px solid var(--border)">'    +'<div class="cat-cover" style="background:linear-gradient(135deg,'+col+'44,'+col+'22)">'    +(activeCat.cover_url?'<img src="'+esc(activeCat.cover_url)+'" alt="cover" style="width:100%;height:100%;object-fit:cover"/>':'')    +(isMod?'<div class="cat-cover-edit" onclick="catUploadCover(\''+esc(cat)+'\')" style="right:10px;bottom:10px">📷 Edit Cover</div>':'')    +'</div>'    +'<div style="padding:16px 20px 18px">'    +'<div style="display:flex;align-items:flex-start;gap:14px">'    +'<div style="flex-shrink:0;position:relative">'    +(activeCat.image_url      ?'<div style="width:64px;height:64px;border-radius:12px;border:3px solid var(--bg1);overflow:hidden;cursor:zoom-in;box-shadow:var(--shadow)" data-src="'+esc(activeCat.image_url)+'" onclick="openLightbox(this.dataset.src)"><img src="'+esc(activeCat.image_url)+'" style="width:100%;height:100%;object-fit:cover"/></div>'      :'<div style="width:64px;height:64px;border-radius:12px;border:3px solid var(--bg1);background:linear-gradient(135deg,'+col+'66,'+col+'33);display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:var(--shadow)">'+esc(activeCat.icon||'🎮')+'</div>')    +(isMod?'<div onclick="catUploadAvatar(\''+esc(cat)+'\')"><div style="position:absolute;bottom:-4px;right:-4px;width:20px;height:20px;background:var(--grad2);color:#fff;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer">✎</div></div>':'')    +'</div>'    +'<div style="flex:1;min-width:0">'    +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:4px">'    +'<div id="cat-name-display" style="font-family:var(--font-d);font-size:1.3rem;font-weight:700">'+esc(activeCat.name)+'</div>'    +(isMod?'<div class="row" style="gap:6px"><button class="btn btn-outline btn-sm" data-slug="'+esc(cat)+'" data-name="'+esc(activeCat.name)+'" data-desc="'+esc(activeCat.description||'')+'" onclick="showCatEditFormBtn(this)">✎ Edit</button>'+(activeCat.is_user_community?'<button class="btn btn-outline btn-sm" onclick="go(\'manage-community\',{slug:\''+esc(cat)+'\'})">⚙ Manage</button>':'')+'</div>':'')    +'</div>'    +'<div id="cat-desc-display" style="color:var(--txt2);font-size:13px;margin-bottom:10px">'+esc(activeCat.description||'No description yet.')+'</div>'    +'<div class="row wrap" style="gap:8px">'    +'<div class="stat-pill"><div class="stat-num">'+(activeCat.thread_count||0)+'</div><div class="stat-lbl">Posts</div></div>'    +(S.user?'<button class="btn btn-grad btn-sm" data-slug="'+esc(cat)+'" onclick="catPostClick(this)">+ Create Post</button>':'')    +'</div></div></div></div></div>'    +'<div id="cat-edit-form"></div>'    :''
+    ?'<div class="c-hero mb2" style="border-radius:var(--r-xl);overflow:hidden;background:var(--bg1);border:1px solid var(--border)">'    +'<div class="cat-cover" style="background:linear-gradient(135deg,'+col+'44,'+col+'22)">'    +(activeCat.cover_url?'<img src="'+esc(activeCat.cover_url)+'" alt="cover" style="width:100%;height:100%;object-fit:cover"/>':'')    +(isMod?'<div class="cat-cover-edit" onclick="catUploadCover(\''+esc(cat)+'\')" style="right:10px;bottom:10px">📷 Edit Cover</div>':'')    +'</div>'    +'<div style="padding:16px 20px 18px">'    +'<div style="display:flex;align-items:flex-start;gap:14px">'    +'<div style="flex-shrink:0;position:relative">'    +(activeCat.image_url      ?'<div style="width:64px;height:64px;border-radius:12px;border:3px solid var(--bg1);overflow:hidden;cursor:zoom-in;box-shadow:var(--shadow)" data-src="'+esc(activeCat.image_url)+'" onclick="openLightbox(this.dataset.src)"><img src="'+esc(activeCat.image_url)+'" style="width:100%;height:100%;object-fit:cover"/></div>'      :'<div style="width:64px;height:64px;border-radius:12px;border:3px solid var(--bg1);background:linear-gradient(135deg,'+col+'66,'+col+'33);display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:var(--shadow)">'+esc(activeCat.icon||'🎮')+'</div>')    +(isMod?'<div onclick="catUploadAvatar(\''+esc(cat)+'\')"><div style="position:absolute;bottom:-4px;right:-4px;width:20px;height:20px;background:var(--grad2);color:#fff;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer">✎</div></div>':'')    +'</div>'    +'<div style="flex:1;min-width:0">'    +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:4px">'    +'<div id="cat-name-display" style="font-family:var(--font-d);font-size:1.3rem;font-weight:700">'+esc(activeCat.name)+'</div>'    +(isMod?'<div class="row" style="gap:6px"><button class="btn btn-outline btn-sm" data-slug="'+esc(cat)+'" data-name="'+esc(activeCat.name)+'" data-desc="'+esc(activeCat.description||'')+'" onclick="showCatEditFormBtn(this)">✎ Edit</button>'+(activeCat.is_user_community?'<button class="btn btn-outline btn-sm" onclick="go(\'manage-community\',{slug:\''+esc(cat)+'\'})">⚙ Manage</button>':'')+'</div>':'')    +'</div>'    +'<div id="cat-desc-display" style="color:var(--txt2);font-size:13px;margin-bottom:10px">'+esc(activeCat.description||'No description yet.')+'</div>'    +'<div class="row wrap" style="gap:8px">'+'<div class="stat-pill"><div class="stat-num">'+(activeCat.thread_count||0)+'</div><div class="stat-lbl">Posts</div></div>'+'<div class="stat-pill"><div class="stat-num">'+(activeCat.member_count||0)+'</div><div class="stat-lbl">Members</div></div>'+(activeCat.weekly_posts?'<div class="stat-pill" style="color:var(--green)"><div class="stat-num" style="color:var(--green)">+'+activeCat.weekly_posts+'</div><div class="stat-lbl">This Week</div></div>':'')+(S.user?joinBtnHtml(cat,'sm'):'')    +(S.user?'<button class="btn btn-grad btn-sm" data-slug="'+esc(cat)+'" onclick="catPostClick(this)">+ Create Post</button>':'')    +'</div></div></div></div></div>'    +'<div id="cat-edit-form"></div>'    :''
   var pageLinks=''
   if(pagination.pages>1){if(page>1)pageLinks+='<button class="btn btn-outline" onclick="go(\'forum\',{category:\''+esc(cat)+'\',sort:\''+sort+'\',page:'+(page-1)+'})">‹ Prev</button>';pageLinks+='<span class="txt-dim txt-sm">Page '+page+' of '+pagination.pages+'</span>';if(page<pagination.pages)pageLinks+='<button class="btn btn-outline" onclick="go(\'forum\',{category:\''+esc(cat)+'\',sort:\''+sort+'\',page:'+(page+1)+'})">Next ›</button>'}
   var feed=threads.length===0?'<div class="card"><div class="empty"><div class="empty-icon">'+(activeCat?activeCat.icon:'🎮')+'</div><p style="font-weight:600;margin-bottom:6px">No posts yet</p>'+(S.user?'<button class="btn btn-grad mt2" data-slug="'+esc(cat)+'" onclick="catPostClick(this)">Be the first</button>':'')+'</div></div>':threads.map(postRowHtml).join('')
@@ -2231,11 +2299,15 @@ async function renderCategories(){
       +'<div class="browse-card-name" style="color:'+col+'">'+esc(c.name)+'</div>'
       +'<div class="browse-card-desc">'+esc(c.description||'A ZiphyNet gaming community')+'</div>'
       +'<div class="browse-card-footer">'
-      +'<div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--txt3)">'
-      +'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>'
-      +'<strong style="color:var(--txt1)">'+(c.thread_count||0).toLocaleString()+'</strong> posts'
+      +'<div style="display:flex;flex-direction:column;gap:4px;flex:1">'
+      +'<div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--txt3)">'
+      +'<span><strong style="color:var(--txt1)">'+(c.thread_count||0).toLocaleString()+'</strong> posts</span>'
+      +'<span>·</span>'
+      +'<span><strong style="color:var(--txt1)">'+(c.member_count||0).toLocaleString()+'</strong> members</span>'
       +'</div>'
-      +postBtn
+      +(c.weekly_posts?'<div style="font-size:10px;color:var(--green)">+'+c.weekly_posts+' this week</div>':'')
+      +'</div>'
+      +joinBtnHtml(c.slug, 'sm')
       +'</div>'
       +'</div>'
       +'</div>'
